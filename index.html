@@ -3976,36 +3976,15 @@
 
             let timers = JSON.parse(localStorage.getItem(roomKey('pomoharbor_v3_timers'))) || [];
 
-            // Wall-clock stamp of the last deliberate change to a timer.
-            // Used to merge remote state per-timer instead of blindly replacing
-            // the whole array, which let a stale push from another tab revert a
-            // play/pause made here a moment earlier.
-            function touchTimer(t) {
-                if (t)
-                    t.updatedAt = serverNow();
-                return t;
-            }
-
-            // Merge remote timers with local ones, keeping the newer version of
-            // each. Timers only present remotely are added; timers deleted
-            // remotely are dropped (a delete always carries a fresh push).
-            function mergeRemoteTimers(remoteTimers) {
-                if (!Array.isArray(remoteTimers))
-                    return timers;
-                const localById = new Map(timers.map(t => [t.id, t]));
-                return remoteTimers.map(rt => {
-                    const lt = localById.get(rt.id);
-                    if (!lt)
-                        return rt;
-                    const lStamp = lt.updatedAt || 0;
-                    const rStamp = rt.updatedAt || 0;
-                    return lStamp > rStamp ? lt : rt;
-                }
-                );
-            }
+            // True from the moment a local change is made until it has actually
+            // been written to the cloud. Guards the debounce window against an
+            // incoming snapshot clobbering a change the user just made here.
+            let pendingLocalPush = false;
 
             function save() {
                 localStorage.setItem(roomKey('pomoharbor_v3_timers'), JSON.stringify(timers));
+                if (!isApplyingRemoteState)
+                    pendingLocalPush = true;
                 scheduleCloudSync();
                 updateMyPublicState();
             }
@@ -4921,7 +4900,6 @@
                 if (timer) {
                     if (timer.running) {
                         let now = serverNow();
-                        touchTimer(timer);
                         logSessionToJournal(timer.title, timer.category, timer.startTime, now);
                         timer.elapsed += now - timer.startTime;
                         timer.running = false;
@@ -4931,7 +4909,6 @@
                         timer.finished = false;
                         timer.startTime = serverNow();
                         timer.running = true;
-                        touchTimer(timer);
                         if (!timers.some(t => t.finished))
                             stopAlarmLoop();
                     }
@@ -4953,7 +4930,6 @@
                         name: `Split #${splitNum}`,
                         time: currentElapsed
                     });
-                    touchTimer(timer);
                     updateSingleCard(id);
                     save();
                 }
@@ -4982,7 +4958,6 @@
                     timer.laps = [];
                     timer.nudge8hShown = false;
                     timer.nudge12hShown = false;
-                    touchTimer(timer);
                     if (!timers.some(t => t.finished))
                         stopAlarmLoop();
                     syncWorkerState();
@@ -5008,7 +4983,6 @@
                     timer.durationMs = (h * 3600 + m * 60 + s) * 1000;
                     timer.elapsed = 0;
                     timer.finished = false;
-                    touchTimer(timer);
                     editingTimerId = null;
                     render();
                     save();
@@ -5447,10 +5421,15 @@
             // A .set() here would either delete or silently overwrite "todos"
             // with a stale local copy on every single dashboard sync.
             function pushStateToCloud() {
-                if (!cloudSyncReady || isApplyingRemoteState)
+                if (!cloudSyncReady || isApplyingRemoteState) {
+                    // Not pushing now, so stop blocking incoming state - otherwise
+                    // an offline blip could freeze this tab out of sync forever.
+                    pendingLocalPush = false;
                     return;
+                }
                 try {
                     updateSyncStatusUI('syncing');
+                    pendingLocalPush = false;
                     roomStateRef.update(collectLocalState()).then( () => {
                         updateSyncStatusUI('connected');
                     }
@@ -5485,8 +5464,11 @@
 
                 isApplyingRemoteState = true;
                 try {
-                    if (remote.timers) {
-                        timers = mergeRemoteTimers(remote.timers);
+                    // Skip only while our own change is still queued for push.
+                    // pushStateToCloud() clears the flag, so this can never
+                    // stall convergence - at worst it defers by one debounce.
+                    if (remote.timers && !pendingLocalPush) {
+                        timers = remote.timers;
                         localStorage.setItem(roomKey('pomoharbor_v3_timers'), JSON.stringify(timers));
                     }
                     if (remote.pomodoroState) {
@@ -9816,5 +9798,5 @@
             });
         </script>
         <input id="import-room-input" type="file" accept="application/json" class="hidden" onchange="handleRoomImportFile(event)">
-    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2504612ec7fad8b',t:'MTc4NTcwNzE2OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2572156afd3ba26',t:'MTc4NTc3OTA2NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2504612ec7fad8b',t:'MTc4NTcwNzE2OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2572e7a0b19aa6a',t:'MTc4NTc3OTYwMw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
