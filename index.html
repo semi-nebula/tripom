@@ -4,6 +4,9 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
         <title>PomoHarbor | Real-Time Multi-Timer & Flowtunes</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="preconnect" href="https://www.gstatic.com">
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,600;0,800;1,400&display=swap" rel="stylesheet">
         <style>
             :root {
@@ -3973,6 +3976,34 @@
 
             let timers = JSON.parse(localStorage.getItem(roomKey('pomoharbor_v3_timers'))) || [];
 
+            // Wall-clock stamp of the last deliberate change to a timer.
+            // Used to merge remote state per-timer instead of blindly replacing
+            // the whole array, which let a stale push from another tab revert a
+            // play/pause made here a moment earlier.
+            function touchTimer(t) {
+                if (t)
+                    t.updatedAt = serverNow();
+                return t;
+            }
+
+            // Merge remote timers with local ones, keeping the newer version of
+            // each. Timers only present remotely are added; timers deleted
+            // remotely are dropped (a delete always carries a fresh push).
+            function mergeRemoteTimers(remoteTimers) {
+                if (!Array.isArray(remoteTimers))
+                    return timers;
+                const localById = new Map(timers.map(t => [t.id, t]));
+                return remoteTimers.map(rt => {
+                    const lt = localById.get(rt.id);
+                    if (!lt)
+                        return rt;
+                    const lStamp = lt.updatedAt || 0;
+                    const rStamp = rt.updatedAt || 0;
+                    return lStamp > rStamp ? lt : rt;
+                }
+                );
+            }
+
             function save() {
                 localStorage.setItem(roomKey('pomoharbor_v3_timers'), JSON.stringify(timers));
                 scheduleCloudSync();
@@ -4890,6 +4921,7 @@
                 if (timer) {
                     if (timer.running) {
                         let now = serverNow();
+                        touchTimer(timer);
                         logSessionToJournal(timer.title, timer.category, timer.startTime, now);
                         timer.elapsed += now - timer.startTime;
                         timer.running = false;
@@ -4899,6 +4931,7 @@
                         timer.finished = false;
                         timer.startTime = serverNow();
                         timer.running = true;
+                        touchTimer(timer);
                         if (!timers.some(t => t.finished))
                             stopAlarmLoop();
                     }
@@ -4920,6 +4953,7 @@
                         name: `Split #${splitNum}`,
                         time: currentElapsed
                     });
+                    touchTimer(timer);
                     updateSingleCard(id);
                     save();
                 }
@@ -4948,6 +4982,7 @@
                     timer.laps = [];
                     timer.nudge8hShown = false;
                     timer.nudge12hShown = false;
+                    touchTimer(timer);
                     if (!timers.some(t => t.finished))
                         stopAlarmLoop();
                     syncWorkerState();
@@ -4973,6 +5008,7 @@
                     timer.durationMs = (h * 3600 + m * 60 + s) * 1000;
                     timer.elapsed = 0;
                     timer.finished = false;
+                    touchTimer(timer);
                     editingTimerId = null;
                     render();
                     save();
@@ -5450,7 +5486,7 @@
                 isApplyingRemoteState = true;
                 try {
                     if (remote.timers) {
-                        timers = remote.timers;
+                        timers = mergeRemoteTimers(remote.timers);
                         localStorage.setItem(roomKey('pomoharbor_v3_timers'), JSON.stringify(timers));
                     }
                     if (remote.pomodoroState) {
@@ -9780,5 +9816,5 @@
             });
         </script>
         <input id="import-room-input" type="file" accept="application/json" class="hidden" onchange="handleRoomImportFile(event)">
-    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2504612ec7fad8b',t:'MTc4NTcwNzE2OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2555b0f7f001ec2',t:'MTc4NTc2MDQ1OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2504612ec7fad8b',t:'MTc4NTcwNzE2OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2572156afd3ba26',t:'MTc4NTc3OTA2NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
