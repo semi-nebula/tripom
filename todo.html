@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>To-Do List | PomoHarbor</title>
+    <link rel="stylesheet" href="/assets/tailwind.5d20233c.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,600;0,800;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #0f0e17; --bg-card: rgba(30, 30, 46, 0.5); --bg-nav: rgba(24, 24, 37, 0.7); --border-color: rgba(255, 255, 255, 0.08);
+            --text-main: #cdd6f4; --text-muted: #9399b2; --accent-primary: #b4befe;
+            --accent-glow: rgba(180, 190, 254, 0.25); --btn-bg: #b4befe; --btn-text: #11111b;
+        }
+        [data-theme="catppuccin"] {
+            --bg-main: #13131d; --bg-card: rgba(30, 30, 46, 0.55); --bg-nav: rgba(24, 24, 37, 0.75); --border-color: rgba(255, 255, 255, 0.08);
+            --text-main: #cdd6f4; --text-muted: #a6adc8; --accent-primary: #b4befe;
+            --accent-glow: rgba(180, 190, 254, 0.25); --btn-bg: #b4befe; --btn-text: #11111b;
+        }
+        [data-theme="turquoise"] {
+            --bg-main: #0b0f12; --bg-card: rgba(32, 38, 43, 0.55); --bg-nav: rgba(19, 23, 26, 0.75); --border-color: rgba(56, 189, 248, 0.15);
+            --text-main: #e6edf3; --text-muted: #8b949e; --accent-primary: #38bdf8;
+            --accent-glow: rgba(56, 189, 248, 0.25); --btn-bg: #38bdf8; --btn-text: #0f172a;
+        }
+        [data-theme="carnation"] {
+            --bg-main: #120d0f; --bg-card: rgba(38, 32, 35, 0.55); --bg-nav: rgba(20, 17, 18, 0.75); --border-color: rgba(255, 107, 129, 0.15);
+            --text-main: #f5e6eb; --text-muted: #9e8b92; --accent-primary: #ff6b81;
+            --accent-glow: rgba(255, 107, 129, 0.25); --btn-bg: #ff6b81; --btn-text: #1a080c;
+        }
+        [data-theme="cerise"] {
+            --bg-main: #120c0e; --bg-card: rgba(39, 32, 35, 0.55); --bg-nav: rgba(20, 16, 18, 0.75); --border-color: rgba(255, 77, 109, 0.15);
+            --text-main: #fce8ef; --text-muted: #a38994; --accent-primary: #ff4d6d;
+            --accent-glow: rgba(255, 77, 109, 0.25); --btn-bg: #ff4d6d; --btn-text: #1a0008;
+        }
+        [data-theme="swarm"] {
+            --bg-main: #12110e; --bg-card: rgba(38, 36, 32, 0.55); --bg-nav: rgba(20, 19, 17, 0.75); --border-color: rgba(243, 156, 18, 0.15);
+            --text-main: #f7f3e6; --text-muted: #a19a8a; --accent-primary: #f39c12;
+            --accent-glow: rgba(243, 156, 18, 0.25); --btn-bg: #f39c12; --btn-text: #1a1000;
+        }
+        [data-theme="meadow"] {
+            --bg-main: #0d120f; --bg-card: rgba(32, 38, 34, 0.55); --bg-nav: rgba(17, 20, 18, 0.75); --border-color: rgba(46, 204, 113, 0.15);
+            --text-main: #e6f5ec; --text-muted: #8ba193; --accent-primary: #2ecc71;
+            --accent-glow: rgba(46, 204, 113, 0.25); --btn-bg: #2ecc71; --btn-text: #051a0d;
+        }
+        [data-theme="merlin"] {
+            --bg-main: #12100e; --bg-card: rgba(38, 35, 31, 0.55); --bg-nav: rgba(20, 18, 16, 0.75); --border-color: rgba(224, 175, 104, 0.15);
+            --text-main: #f7f1e6; --text-muted: #a1978a; --accent-primary: #e0af68;
+            --accent-glow: rgba(224, 175, 104, 0.25); --btn-bg: #e0af68; --btn-text: #1a1103;
+        }
+        [data-theme="blueviolet"] {
+            --bg-main: #0d0d17; --bg-card: rgba(31, 31, 48, 0.55); --bg-nav: rgba(17, 17, 27, 0.75); --border-color: rgba(137, 180, 250, 0.15);
+            --text-main: #cdd6f4; --text-muted: #9399b2; --accent-primary: #89b4fa;
+            --accent-glow: rgba(137, 180, 250, 0.25); --btn-bg: #89b4fa; --btn-text: #11111b;
+        }
+        [data-theme="monochrome"] {
+            --bg-main: #050505; --bg-card: rgba(30, 30, 30, 0.55); --bg-nav: rgba(15, 15, 15, 0.75); --border-color: rgba(255, 255, 255, 0.12);
+            --text-main: #ffffff; --text-muted: #888888; --accent-primary: #ffffff;
+            --accent-glow: rgba(255, 255, 255, 0.2); --btn-bg: #ffffff; --btn-text: #000000;
+        }
+        [data-theme="frostcontrast"] {
+            --bg-main: #06060a; --bg-card: rgba(52, 55, 78, 0.92); --bg-nav: rgba(40, 42, 60, 0.9); --border-color: rgba(255, 255, 255, 0.16);
+            --text-main: #f3f5fc; --text-muted: #c2c6de; --accent-primary: #7dd3fc;
+            --accent-glow: rgba(125, 211, 252, 0.3); --btn-bg: #7dd3fc; --btn-text: #061019;
+        }
+        [data-theme="inkcontrast"] {
+            --bg-main: #24242f; --bg-card: rgba(8, 8, 13, 0.92); --bg-nav: rgba(13, 13, 18, 0.9); --border-color: rgba(255, 255, 255, 0.14);
+            --text-main: #f5f5fa; --text-muted: #c4c4d2; --accent-primary: #34d399;
+            --accent-glow: rgba(52, 211, 153, 0.3); --btn-bg: #34d399; --btn-text: #05130d;
+        }
+        [data-theme="ambercontrast"] {
+            --bg-main: #0a0806; --bg-card: rgba(60, 49, 38, 0.92); --bg-nav: rgba(44, 36, 28, 0.9); --border-color: rgba(255, 200, 120, 0.18);
+            --text-main: #fbf1e6; --text-muted: #d6c3b0; --accent-primary: #fbbf24;
+            --accent-glow: rgba(251, 191, 36, 0.3); --btn-bg: #fbbf24; --btn-text: #1a1000;
+        }
+
+        .toggle-switch { position: relative; display: inline-block; width: 38px; height: 21px; flex-shrink: 0; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+        .toggle-slider {
+            position: absolute; inset: 0; cursor: pointer;
+            background-color: rgba(255, 255, 255, 0.15);
+            border: 1px solid var(--border-color);
+            border-radius: 9999px;
+            transition: background-color 0.2s ease;
+        }
+        .toggle-slider::before {
+            content: ""; position: absolute; height: 15px; width: 15px;
+            left: 2px; top: 2px;
+            background-color: #fff;
+            border-radius: 50%;
+            transition: transform 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+        }
+        .toggle-switch input:checked + .toggle-slider { background-color: var(--accent-primary); }
+        .toggle-switch input:checked + .toggle-slider::before { transform: translateX(17px); }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.25); border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 9999px; border: 2px solid transparent; background-clip: padding-box; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        * { scrollbar-width: thin; scrollbar-color: var(--border-color) rgba(0, 0, 0, 0.2); }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            overscroll-behavior: none;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .mono { font-family: 'JetBrains Mono', monospace; }
+
+        .custom-card {
+            background-color: color-mix(in srgb, var(--bg-main) 90%, white 10%);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+        }
+        .custom-nav {
+            background-color: color-mix(in srgb, var(--bg-main) 92%, white 8%);
+            border-color: var(--border-color);
+        }
+
+        /* AMOLED Mode */
+        html.amoled-mode .custom-card,
+        html.amoled-mode .custom-nav,
+        html.amoled-mode .header-icon-btn,
+        html.amoled-mode body {
+            background-color: #000000;
+        }
+
+        /* Translucent Mode */
+        html.translucent-mode .custom-card {
+            background-color: color-mix(in srgb, var(--bg-card) 55%, var(--bg-main) 45%);
+        }
+        html.translucent-mode .custom-nav,
+        html.translucent-mode header {
+            background-color: color-mix(in srgb, var(--bg-nav) 60%, var(--bg-main) 40%);
+        }
+
+        .accent-text { color: var(--accent-primary); }
+        .text-muted-custom { color: var(--text-muted); }
+
+        .header-icon-btn {
+            width: 2.25rem;
+            height: 2.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9999px;
+            background-color: color-mix(in srgb, var(--bg-main) 90%, white 10%);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: border-color 0.2s ease, background-color 0.2s ease;
+            flex-shrink: 0;
+        }
+        .header-icon-btn:hover { border-color: var(--accent-primary); background-color: var(--accent-glow); }
+
+        .custom-btn {
+            background-color: var(--btn-bg);
+            color: var(--btn-text);
+            font-weight: 700;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .custom-btn:hover { filter: brightness(1.1); box-shadow: 0 0 15px var(--accent-glow); }
+        .custom-btn:active { transform: scale(0.97); }
+        .custom-btn:disabled { filter: none; box-shadow: none; }
+
+        .dropdown-menu-base {
+            max-height: 0px;
+            opacity: 0;
+            overflow: hidden;
+            transform: translateY(-8px);
+            transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease, transform 0.25s ease;
+            pointer-events: none;
+            z-index: 99999 !important;
+            position: absolute;
+            contain: layout style;
+        }
+        .dropdown-menu-open {
+            max-height: 540px !important;
+            opacity: 1 !important;
+            transform: translateY(0px) !important;
+            pointer-events: auto !important;
+            overflow: hidden !important;
+        }
+
+        @media (max-width: 640px) {
+            #theme-menu.dropdown-menu-open {
+                position: fixed !important;
+                left: 0.75rem !important;
+                right: 0.75rem !important;
+                top: 4.5rem !important;
+                width: auto !important;
+                max-width: none !important;
+                max-height: calc(100dvh - 6rem) !important;
+                margin-top: 0 !important;
+                border-radius: 1rem !important;
+                display: flex !important;
+                flex-direction: column !important;
+            }
+            #theme-menu .theme-list {
+                flex: 1 1 auto !important;
+                min-height: 0 !important;
+                max-height: min(60vh, 320px) !important;
+                overflow-y: auto !important;
+            }
+        }
+        .theme-list {
+            max-height: min(60vh, 360px);
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-right: 2px;
+        }
+
+        @media (max-width: 1024px) {
+            *, *::before, *::after {
+                animation: none !important;
+                transition: none !important;
+                scroll-behavior: auto !important;
+            }
+            .custom-card, .custom-nav, .custom-btn {
+                box-shadow: none !important;
+            }
+            .custom-card:hover, .custom-card:active {
+                transform: none !important;
+                box-shadow: none !important;
+                border-color: var(--border-color) !important;
+            }
+            .custom-btn:hover, .custom-btn:active {
+                filter: none !important;
+                box-shadow: none !important;
+            }
+            * { text-shadow: none !important; }
+            .header-icon-btn {
+                width: 2.5rem !important;
+                height: 2.5rem !important;
+                font-size: 1rem !important;
+            }
+        }
+    </style>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0f0e17">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="PomoHarbor">
+    <meta name="application-name" content="PomoHarbor">
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <script>
+        window.__pomoDeferredPrompt = null;
+        window.__pomoInstallDiagnostics = { manifestOk: null, swOk: null, promptEvent: null };
+        window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            window.__pomoDeferredPrompt = e;
+            window.__pomoInstallDiagnostics.promptEvent = e;
+        });
+        fetch('/manifest.json', { method: 'HEAD', cache: 'no-store' })
+            .then((r) => { window.__pomoInstallDiagnostics.manifestOk = r.ok; })
+            .catch(() => { window.__pomoInstallDiagnostics.manifestOk = false; });
+    </script>
+</head>
+<body class="flex flex-col antialiased" onclick="closeThemeMenu();">
+
+    <header class="border-b custom-nav sticky top-0 z-40 shrink-0">
+        <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 h-16 flex items-center justify-between gap-2 overflow-visible">
+            <div class="flex items-center gap-2 sm:gap-3 overflow-x-auto no-scrollbar py-1 flex-1 min-w-0 justify-start">
+                <h1 class="text-base sm:text-xl font-extrabold accent-text tracking-tight flex items-center gap-1.5 shrink-0 leading-none">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="shrink-0 sm:w-7 sm:h-7">
+                      <path d="M4 4L8 8H16L20 4V16C20 18.2 18.2 20 16 20H8C5.8 20 4 18.2 4 16V4Z" fill="#0F172A" stroke="#A855F7" stroke-width="1.5"/>
+                      <rect x="7" y="10" width="3" height="3" fill="#A855F7"/>
+                      <rect x="14" y="10" width="3" height="3" fill="#A855F7"/>
+                      <polygon points="11,14 13,14 12,15" fill="#EC4899"/>
+                    </svg>
+                    <span class="hidden sm:inline">PomoHarbor</span>
+                </h1>
+                <span class="text-xs font-bold text-muted-custom hidden sm:inline">/ To-Do</span>
+            </div>
+            <div class="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
+                <span id="sync-status" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 custom-nav border rounded-xl text-[11px] font-bold text-muted-custom">
+                    <span id="sync-dot">🟡</span> <span id="sync-label">Connecting...</span>
+                </span>
+                <div class="relative">
+                    <button onclick="event.stopPropagation(); toggleThemeDropdown(event);" class="header-icon-btn" title="Theme">🎨</button>
+                    <div id="theme-menu" class="dropdown-menu-base absolute right-0 top-full mt-3 w-44 sm:w-48 border rounded-2xl shadow-2xl p-1.5" style="background-color: var(--bg-main);" onclick="event.stopPropagation();">
+                        <div class="theme-list space-y-1">
+                            <div onclick="selectTheme('catppuccin', '🐱 Catppuccin')" class="px-3 py-2 rounded-xl hover:bg-white/10 cursor-pointer text-xs font-semibold flex items-center justify-between transition"><span>🐱 Catppuccin</span></div>
+                            <div onclick="selectTheme('turquoise', '🩵 Turquoise')" class="px-3 py-2 rounded-xl hover:bg-white/10 cursor-pointer text-xs font-semibold flex items-center justify-between transition"><span>🩵 Turquoise</span></div>
+                            <div onclick="selectTheme('carnation', '🌺 Carnation')" class="px-3 py-2 rounded-xl hover:bg-white/10 cursor-pointer text-xs font-semibold flex items-center justify-between transition"><span>🌺 Carnation</span></div>
+                            <div onclick="selectTheme('cerise', '🌸 Cerise')" class="px-3 py-2 rounded-xl hover:bg-white/10 cursor-pointer text-xs font-semibold flex items-center justify-between transition"><span>🌸 Cerise</span></div>
+                            <div onclick="selectTheme('swarm', '🐝 Swarm')" class="px-3 py-2 rounded-xl hover:bg-white/10 cursor-pointer text-xs font-semibold flex items-center justify-between transition"><span>🐝 Swarm</span></div>
+                            <div onclick="selectTheme('meadow', '🌿 Meadow')" class="px-3 py-2 rounded-xl hover:bg-white/10 cursor-pointer text-xs font-semibold flex items-center justify-between transition"><span>🌿 Meadow</span></div>
+                            <div onclick="selectTheme('merlin', '🧙‍♂️ Merlin')" class="px-3 py-2 rounded-xl hover:bg-white/10 cursor-pointer text-xs font-semibold flex items-center justify-between transition"><span>🧙‍♂️ Merlin</span></div>
+                            <div onclick="selectTheme('blueviolet', '💜 Blue Violet')" class="px-3 py-2 rounded-xl hover:bg-white/10 cursor-pointer text-xs font-semibold flex items-center justify-between transition"><span>💜 Blue Violet</span></div>
+                            <div onclick="selectTheme('monochrome', '⚪ Monochrome')" class="px-3 py-2 rounded-xl hover:bg-white/10 cursor-pointer text-xs font-semibold flex items-center justify-between transition"><span>⚪ Monochrome</span></div>
+                            <div class="my-1 border-t border-white/10"></div>
+                            <div onclick="selectTheme('frostcontrast', '❄️ Frost Contrast')" class="px-3 py-2 rounded-xl hover:bg-white/10 cursor-pointer text-xs font-semibold flex items-center justify-between transition"><span>❄️ Frost Contrast</span></div>
+                            <div onclick="selectTheme('inkcontrast', '🖋️ Ink Contrast')" class="px-3 py-2 rounded-xl hover:bg-white/10 cursor-pointer text-xs font-semibold flex items-center justify-between transition"><span>🖋️ Ink Contrast</span></div>
+                            <div onclick="selectTheme('ambercontrast', '🔶 Amber Contrast')" class="px-3 py-2 rounded-xl hover:bg-white/10 cursor-pointer text-xs font-semibold flex items-center justify-between transition"><span>🔶 Amber Contrast</span></div>
+                            <div class="my-1 border-t border-white/10"></div>
+                            <div class="px-3 py-2 rounded-xl flex items-center justify-between gap-2" onclick="event.stopPropagation()">
+                                <span class="text-xs font-semibold">🌑 AMOLED Mode</span>
+                                <label class="toggle-switch">
+                                    <input id="amoled-toggle" type="checkbox" onchange="toggleAmoledMode(this.checked)">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="my-1 border-t border-white/10"></div>
+                            <div class="px-3 py-2 rounded-xl flex items-center justify-between gap-2" onclick="event.stopPropagation()">
+                                <span class="text-xs font-semibold">✨ Translucent Mode</span>
+                                <label class="toggle-switch">
+                                    <input id="translucent-toggle" type="checkbox" onchange="toggleTranslucentMode(this.checked)">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="goToDashboard()" class="header-icon-btn" title="Back to Dashboard">🏠</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 min-h-0 overflow-y-auto p-4 sm:p-8 pt-6 sm:pt-10 max-w-2xl mx-auto w-full">
+        <div class="custom-card p-5 sm:p-8 rounded-3xl border shadow-2xl">
+            <div class="flex flex-wrap justify-between items-center gap-2 mb-6 pb-4 border-b border-white/10">
+                <div>
+                    <h3 class="text-lg sm:text-xl font-bold accent-text flex items-center gap-2">✅ To-Do List</h3>
+                    <p class="text-[11px] sm:text-xs text-muted-custom mt-1">Up to 10 tasks at a time - synced across your devices.</p>
+                </div>
+                <span id="todo-count-badge" class="px-3 py-1.5 custom-nav border rounded-xl text-xs font-bold text-muted-custom whitespace-nowrap">0 / 10</span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 sm:gap-4 mb-6">
+                <div class="custom-nav border rounded-2xl p-3 sm:p-4 text-center">
+                    <div id="todo-widget-active" class="text-2xl sm:text-3xl font-black accent-text">0</div>
+                    <div class="text-[10px] sm:text-[11px] text-muted-custom uppercase tracking-wider font-bold mt-1">📝 Active</div>
+                </div>
+                <div class="custom-nav border rounded-2xl p-3 sm:p-4 text-center">
+                    <div id="todo-widget-done" class="text-2xl sm:text-3xl font-black accent-text">0</div>
+                    <div class="text-[10px] sm:text-[11px] text-muted-custom uppercase tracking-wider font-bold mt-1">✔️ Completed</div>
+                </div>
+            </div>
+
+            <div class="flex gap-2 mb-6">
+                <input id="todo-input" type="text" maxlength="120" placeholder="Add a task..." onkeydown="if(event.key==='Enter') addTodoItem();" class="flex-grow bg-transparent custom-nav border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-white/30 transition" />
+                <button id="todo-add-btn" onclick="addTodoItem()" class="px-4 sm:px-5 py-2.5 custom-btn rounded-xl text-xs font-extrabold uppercase tracking-widest shadow-xl whitespace-nowrap">Add</button>
+            </div>
+
+            <div id="todo-list" class="space-y-2.5 max-h-[55vh] overflow-y-auto pr-1"></div>
+        </div>
+    </main>
+
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 custom-card px-4 py-2.5 rounded-xl text-xs font-semibold shadow-2xl transition-all duration-300 opacity-0 pointer-events-none translate-y-3 z-50">
+        <span id="toast-msg"></span>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+    <script>
+        function generateRoomId(len = 10) {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let out = '';
+            for (let i = 0; i < len; i++) out += chars.charAt(Math.floor(Math.random() * chars.length));
+            return out;
+        }
+        let ROOM_ID = window.location.hash.replace('#', '').trim();
+        if (!ROOM_ID) {
+            ROOM_ID = generateRoomId();
+            window.location.hash = ROOM_ID;
+        }
+        function roomKey(baseKey) { return baseKey + '__' + ROOM_ID; }
+
+        function goToDashboard() {
+            window.location.href = 'index.html?t=' + Date.now() + window.location.hash;
+        }
+
+        function changeTheme(themeName) {
+            document.documentElement.setAttribute('data-theme', themeName);
+            localStorage.setItem(roomKey('pomoharbor_fmhy_theme'), themeName);
+        }
+
+        function applyAmoledMode(isOn) {
+            const root = document.documentElement.style;
+            if (isOn) {
+                root.setProperty('--bg-main', '#000000');
+                root.setProperty('--bg-card', 'rgba(0, 0, 0, 0.92)');
+                root.setProperty('--bg-nav', 'rgba(0, 0, 0, 0.92)');
+            } else {
+                root.removeProperty('--bg-main');
+                root.removeProperty('--bg-card');
+                root.removeProperty('--bg-nav');
+            }
+            const toggleEl = document.getElementById('amoled-toggle');
+            if (toggleEl) toggleEl.checked = !!isOn;
+        }
+
+        function toggleAmoledMode(isOn) {
+            localStorage.setItem(roomKey('pomoharbor_amoled_mode'), isOn ? 'true' : 'false');
+            applyAmoledMode(isOn);
+        }
+
+        function applyTranslucentMode(isOn) {
+            if (isOn) document.documentElement.classList.add('translucent-mode');
+            else document.documentElement.classList.remove('translucent-mode');
+            const toggleEl = document.getElementById('translucent-toggle');
+            if (toggleEl) toggleEl.checked = !!isOn;
+        }
+
+        function toggleTranslucentMode(isOn) {
+            localStorage.setItem(roomKey('pomoharbor_translucent_mode'), isOn ? 'true' : 'false');
+            applyTranslucentMode(isOn);
+        }
+
+        function toggleThemeDropdown(e) {
+            e.stopPropagation();
+            const menu = document.getElementById('theme-menu');
+            if (menu) menu.classList.toggle('dropdown-menu-open');
+        }
+
+        function closeThemeMenu() {
+            const menu = document.getElementById('theme-menu');
+            if (menu && menu.classList.contains('dropdown-menu-open')) {
+                menu.classList.remove('dropdown-menu-open');
+            }
+        }
+
+        function selectTheme(themeKey, labelText) {
+            changeTheme(themeKey);
+            closeThemeMenu();
+        }
+
+        // Apply saved preferences on load
+        const savedTheme = localStorage.getItem(roomKey('pomoharbor_fmhy_theme')) || 'catppuccin';
+        changeTheme(savedTheme);
+        const savedAmoled = localStorage.getItem(roomKey('pomoharbor_amoled_mode')) === 'true';
+        applyAmoledMode(savedAmoled);
+        const savedTranslucent = localStorage.getItem(roomKey('pomoharbor_translucent_mode')) === 'true';
+        applyTranslucentMode(savedTranslucent);
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-3');
+            setTimeout(() => toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-3'), 2500);
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+
+        const TODO_MAX = 10;
+        let rawTodos = JSON.parse(localStorage.getItem(roomKey('pomoharbor_todos')) || '[]');
+        let todos = Array.isArray(rawTodos) ? rawTodos : [];
+        let cloudSyncReady = false;
+        let isApplyingRemoteState = false;
+        let todosRef = null;
+        const SYNC_CLIENT_ID = 'c_' + Math.random().toString(36).slice(2) + '_' + Date.now();
+
+        function renderTodoUI() {
+            const list = document.getElementById('todo-list');
+            const countBadge = document.getElementById('todo-count-badge');
+            const activeWidget = document.getElementById('todo-widget-active');
+            const doneWidget = document.getElementById('todo-widget-done');
+            const addBtn = document.getElementById('todo-add-btn');
+            const input = document.getElementById('todo-input');
+
+            const activeCount = todos.filter(t => !t.done).length;
+            const doneCount = todos.filter(t => t.done).length;
+
+            countBadge.innerText = `${todos.length} / ${TODO_MAX}`;
+            activeWidget.innerText = activeCount;
+            doneWidget.innerText = doneCount;
+
+            const atLimit = todos.length >= TODO_MAX;
+            addBtn.disabled = atLimit;
+            addBtn.classList.toggle('opacity-40', atLimit);
+            addBtn.classList.toggle('cursor-not-allowed', atLimit);
+            input.placeholder = atLimit ? `Limit reached (${TODO_MAX}/${TODO_MAX})` : 'Add a task...';
+
+            if (todos.length === 0) {
+                list.innerHTML = `<p class="text-muted-custom text-xs italic text-center py-8">No tasks yet - add up to ${TODO_MAX} above.</p>`;
+                return;
+            }
+
+            list.innerHTML = todos.map(item => `
+                <div class="flex items-center gap-3 p-3 sm:p-3.5 bg-white/5 rounded-2xl border border-white/5 hover:border-white/10 transition">
+                    <input type="checkbox" ${item.done ? 'checked' : ''} onchange="toggleTodoItem(${item.id})" class="w-4 h-4 sm:w-5 sm:h-5 accent-current cursor-pointer flex-shrink-0" />
+                    <span class="flex-grow text-sm ${item.done ? 'line-through text-muted-custom opacity-60' : ''} break-words">${escapeHtml(item.text)}</span>
+                    <button onclick="deleteTodoItem(${item.id})" class="p-1 opacity-40 hover:opacity-100 hover:text-red-400 text-xs transition flex-shrink-0">🗑️</button>
+                </div>
+            `).join('');
+        }
+
+        function persistLocal() {
+            localStorage.setItem(roomKey('pomoharbor_todos'), JSON.stringify(todos));
+        }
+
+        function pushTodosToCloud() {
+            if (!cloudSyncReady || isApplyingRemoteState || !todosRef) return;
+            updateSyncStatusUI('syncing');
+            todosRef.set({ items: todos, origin: SYNC_CLIENT_ID, updatedAt: firebase.database.ServerValue.TIMESTAMP })
+                .then(() => updateSyncStatusUI('connected'))
+                .catch(() => updateSyncStatusUI('offline'));
+        }
+
+        function saveTodos() {
+            persistLocal();
+            pushTodosToCloud();
+        }
+
+        function addTodoItem() {
+            const input = document.getElementById('todo-input');
+            const text = input.value.trim();
+            if (!text) return;
+            if (todos.length >= TODO_MAX) {
+                showToast(`Limit reached - max ${TODO_MAX} tasks at a time.`);
+                return;
+            }
+            todos.push({ id: Date.now(), text: text, done: false });
+            input.value = '';
+            renderTodoUI();
+            saveTodos();
+        }
+
+        function toggleTodoItem(id) {
+            const item = todos.find(t => t.id === id);
+            if (item) item.done = !item.done;
+            renderTodoUI();
+            saveTodos();
+        }
+
+        function deleteTodoItem(id) {
+            todos = todos.filter(t => t.id !== id);
+            renderTodoUI();
+            saveTodos();
+        }
+
+        function updateSyncStatusUI(status) {
+            const dot = document.getElementById('sync-dot');
+            const label = document.getElementById('sync-label');
+            if (!dot || !label) return;
+            if (status === 'connected') { dot.innerText = '🟢'; label.innerText = 'Synced'; }
+            else if (status === 'syncing') { dot.innerText = '🔵'; label.innerText = 'Syncing...'; }
+            else if (status === 'offline') { dot.innerText = '🔴'; label.innerText = 'Offline'; }
+            else { dot.innerText = '🟡'; label.innerText = 'Connecting...'; }
+        }
+
+        try {
+            renderTodoUI();
+        } catch (err) {
+            console.warn('To-Do: initial render failed', err);
+        }
+
+        try {
+            if (typeof firebase === 'undefined') throw new Error('Firebase SDK did not load');
+
+            const firebaseConfig = {
+                apiKey: "AIzaSyDqwU3_It5sdvVIuMlJVweti8Hn1pXh86U",
+                authDomain: "chronocraft-b680f.firebaseapp.com",
+                databaseURL: "https://chronocraft-b680f-default-rtdb.asia-southeast1.firebasedatabase.app",
+                projectId: "chronocraft-b680f",
+                storageBucket: "chronocraft-b680f.firebasestorage.app",
+                messagingSenderId: "702477428756",
+                appId: "1:702477428756:web:40168cce4b8a75057edf01",
+                measurementId: "G-YK8R1T9BH5"
+            };
+
+            firebase.initializeApp(firebaseConfig);
+            const cloudDb = firebase.database();
+            todosRef = cloudDb.ref('rooms/' + ROOM_ID + '/state/todos');
+            cloudSyncReady = true;
+
+            todosRef.on('value', (snapshot) => {
+                try {
+                    const remote = snapshot.val();
+                    if (!remote) {
+                        pushTodosToCloud();
+                        return;
+                    }
+                    if (remote.origin === SYNC_CLIENT_ID) return;
+                    isApplyingRemoteState = true;
+                    todos = Array.isArray(remote.items) ? remote.items : [];
+                    persistLocal();
+                    renderTodoUI();
+                    isApplyingRemoteState = false;
+                    updateSyncStatusUI('connected');
+                } catch (err) {
+                    console.warn('Cloud Sync: listener error', err);
+                    updateSyncStatusUI('offline');
+                }
+            }, () => updateSyncStatusUI('offline'));
+
+            cloudDb.ref('.info/connected').on('value', (snap) => {
+                updateSyncStatusUI(snap.val() === true ? 'connected' : 'offline');
+            });
+
+            window.addEventListener('hashchange', () => window.location.reload());
+        } catch (err) {
+            console.warn('Cloud Sync unavailable, To-Do will run in local-only mode:', err);
+            cloudSyncReady = false;
+            updateSyncStatusUI('offline');
+        }
+    </script>
+<script>
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                const url = new URL(window.location.href);
+                url.searchParams.set('_bfc', Date.now());
+                window.location.replace(url.toString());
+            }
+        });
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js').catch(() => {});
+        }
+    </script>
+</body>
+</html>
