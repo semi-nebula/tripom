@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pomoharbor-v12';
+const CACHE_NAME = 'pomoharbor-v14';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
