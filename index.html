@@ -2419,8 +2419,12 @@
 
             // App version + changelog. Bump APP_VERSION whenever you ship a
             // notable update; the app can then highlight new entries.
-            const APP_VERSION = '1.5.0';
+            const APP_VERSION = '1.5.1';
             const CHANGELOG = [{
+                version: '1.5.1',
+                date: '2026-09-23',
+                items: ['Fixed Schedule: if another device in the same room was still running an older app build (or imported room data was missing fields), the Schedule tab could break after deleting slots - the Save button did nothing and the slot list went blank. Schedule data is now self-repairing on both devices, so a mixed old/new device room can no longer lock you out of adding slots.']
+            }, {
                 version: '1.5.0',
                 date: '2026-08-03',
                 items: ['Schedule slots can now be added to several days at once - tick the days you want instead of creating the same slot over and over.', 'Quick day presets: Mon-Fri, Sat-Sun, and Mon-Sun.', 'Editing a slot can copy it to more days; its own day always stays selected so it is never moved by accident.', 'New timetables now start with all seven days instead of Mon-Fri.', 'Bigger, easier to read schedule rows and day tabs.', 'Fixed chat notifications not arriving for new messages.', 'Fixed accepting friend requests and sending group invites.']
@@ -5503,7 +5507,13 @@
                         renderQuickLinksUI();
                     }
                     if (remote.schedule) {
-                        scheduleState = remote.schedule;
+                        // Always run the incoming schedule through the same
+                        // normalizer loadSchedule() uses. A device running an
+                        // older build (or room data from an older build) can
+                        // push a schedule without a days array / with a
+                        // non-array slots; assigning it raw used to break
+                        // renderSchedule() and the slot modal on this device.
+                        scheduleState = normalizeScheduleState(remote.schedule);
                         localStorage.setItem(roomKey('pomoharbor_schedule'), JSON.stringify(scheduleState));
                         if (currentTab === 'schedule')
                             renderSchedule();
@@ -6223,38 +6233,58 @@
             let scheduleSelectedDay = 'Mon';
             let scheduleReminderInterval = null;
 
+            // Normalizes any saved/received schedule object into the exact
+            // shape the rest of the app assumes:
+            //   { days: [...all seven standard days...], slots: [ {id, day, ...} ], remindersEnabled: boolean }
+            // It is used BOTH when reading localStorage (loadSchedule) and when
+            // applying state pushed by another device (applyRemoteState).
+            //
+            // Why this exists: an older app build (a stale PWA install on the
+            // OTHER device in the same room), an imported room backup, or room
+            // data written before this field existed can carry a schedule
+            // WITHOUT a days array (or with a non-array slots). Assigning that
+            // straight into scheduleState used to make renderSchedule() throw
+            // on scheduleState.days.map() - which killed the day tabs, the
+            // slot list, the "No slots for this day" message, and the Save /
+            // Delete buttons of the slot modal (they all call renderSchedule),
+            // even though the slot itself was being saved fine in the
+            // background. It looked exactly like "I deleted all my slots and
+            // now I can't create a new one". Normalizing on both entry points
+            // makes the schedule immune to any foreign data shape.
+            function normalizeScheduleState(raw) {
+                const allDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                const savedDays = raw && Array.isArray(raw.days) ? raw.days : [];
+                // Keep saved order, then append any missing standard days.
+                const mergedDays = [...savedDays];
+                allDays.forEach(d => {
+                    if (!mergedDays.includes(d))
+                        mergedDays.push(d);
+                }
+                );
+                const rawSlots = raw && Array.isArray(raw.slots) ? raw.slots : [];
+                return {
+                    days: mergedDays,
+                    slots: rawSlots.filter( s => s && typeof s === 'object' && s.id ),
+                    remindersEnabled: raw ? raw.remindersEnabled !== false : true
+                };
+            }
+
             function loadSchedule() {
                 const raw = localStorage.getItem(roomKey('pomoharbor_schedule'));
+                let parsed = null;
                 if (raw) {
                     try {
-                        const parsed = JSON.parse(raw);
-                        const savedDays = Array.isArray(parsed.days) ? parsed.days : [];
-                        const allDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-                        // Keep saved order, then append any missing standard days.
-                        const mergedDays = [...savedDays];
-                        let changed = false;
-                        allDays.forEach(d => {
-                            if (!mergedDays.includes(d)) {
-                                mergedDays.push(d);
-                                changed = true;
-                            }
-                        }
-                        );
-                        scheduleState = {
-                            days: mergedDays,
-                            slots: Array.isArray(parsed.slots) ? parsed.slots : [],
-                            remindersEnabled: parsed.remindersEnabled !== false
-                        };
-                        if (changed)
-                            saveSchedule();
+                        parsed = JSON.parse(raw);
                     } catch (e) {
-                        scheduleState = {
-                            days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                            slots: [],
-                            remindersEnabled: true
-                        };
+                        parsed = null;
                     }
                 }
+                const prevDays = (parsed && Array.isArray(parsed.days)) ? parsed.days : [];
+                scheduleState = normalizeScheduleState(parsed);
+                // Re-persist only when we actually normalized something away
+                // (e.g. an older build left the days array short or absent).
+                if (parsed && JSON.stringify(prevDays) !== JSON.stringify(scheduleState.days))
+                    saveSchedule();
                 if (userSettings.scheduleReminders === undefined)
                     userSettings.scheduleReminders = true;
             }
@@ -6328,7 +6358,12 @@
                 // Day tabs
                 const tabsEl = document.getElementById('schedule-day-tabs');
                 if (tabsEl) {
-                    tabsEl.innerHTML = scheduleState.days.map(day => {
+                    // Defensive: never let a malformed state shape break the
+                    // whole schedule view (see normalizeScheduleState).
+                    const scheduleDays = Array.isArray(scheduleState.days) && scheduleState.days.length
+                        ? scheduleState.days
+                        : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                    tabsEl.innerHTML = scheduleDays.map(day => {
                         const active = day === scheduleSelectedDay;
                         return `<button onclick="selectScheduleDay('${day}')" class="px-3.5 py-2 text-sm font-bold rounded-xl whitespace-nowrap ${active ? 'custom-btn' : 'custom-nav border text-muted-custom hover:text-white'}">${day}</button>`;
                     }
@@ -6341,7 +6376,7 @@
                 if (!listEl || !emptyEl)
                     return;
 
-                const slots = scheduleState.slots.filter(s => s.day === scheduleSelectedDay).sort( (a, b) => minutesFromTime(a.start) - minutesFromTime(b.start));
+                const slots = (Array.isArray(scheduleState.slots) ? scheduleState.slots : []).filter( s => s && s.day === scheduleSelectedDay ).sort( (a, b) => minutesFromTime(a.start) - minutesFromTime(b.start));
 
                 if (slots.length === 0) {
                     listEl.innerHTML = '';
@@ -6677,8 +6712,16 @@
                 save();
 
                 saveSchedule();
+                // Close FIRST, then re-render. If a re-render ever throws
+                // (corrupt state, whatever), the user still gets their slot
+                // saved, the modal closed and the confirmation toast - instead
+                // of a dead Save button that "does nothing".
                 closeModal('schedule-slot-modal');
-                renderSchedule();
+                try {
+                    renderSchedule();
+                } catch (e) {
+                    console.warn('Schedule render failed after saving a slot:', e);
+                }
                 if (existingId)
                     showToast(copied ? 'Slot updated and copied to ' + copied + ' more day' + (copied > 1 ? 's' : '') : 'Slot updated');
                 else
@@ -6697,8 +6740,14 @@
                 }
                 scheduleState.slots = scheduleState.slots.filter(s => s.id !== id);
                 saveSchedule();
+                // Close first, render second (and never let a render error eat
+                // the delete confirmation - see saveScheduleSlot).
                 closeModal('schedule-slot-modal');
-                renderSchedule();
+                try {
+                    renderSchedule();
+                } catch (e) {
+                    console.warn('Schedule render failed after deleting a slot:', e);
+                }
                 showToast('Slot deleted');
             }
 
