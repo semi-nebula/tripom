@@ -1630,6 +1630,55 @@
             </div>
         </div>
         <!-- SCHEDULE SLOT MODAL -->
+        <!-- STUDY SUBJECT MODAL -->
+        <div id="study-subject-modal" onclick="closeModal('study-subject-modal')" class="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+            <div onclick="event.stopPropagation()" class="custom-card rounded-3xl max-w-sm w-full p-6 shadow-2xl border">
+                <h3 id="study-subject-modal-title" class="text-base font-bold accent-text mb-4">Add Subject</h3>
+                <input id="study-subject-id" type="hidden">
+                <div class="mb-3">
+                    <label class="block text-[10px] font-bold text-muted-custom uppercase tracking-wider mb-1">Subject</label>
+                    <input id="study-subject-name" type="text" placeholder="e.g. Maths, Physics, Coding" maxlength="40" class="w-full custom-nav border rounded-xl px-3 py-2 text-xs outline-none text-white">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-[10px] font-bold text-muted-custom uppercase tracking-wider mb-1">Color</label>
+                    <select id="study-subject-color" class="w-full custom-nav border rounded-xl px-3 py-2 text-xs outline-none text-white">
+                        <option value="indigo">Indigo</option>
+                        <option value="emerald">Green</option>
+                        <option value="amber">Amber</option>
+                        <option value="rose">Red</option>
+                        <option value="sky">Blue</option>
+                        <option value="violet">Violet</option>
+                        <option value="slate">Gray</option>
+                    </select>
+                </div>
+                <div class="flex gap-2 justify-end">
+                    <button id="study-subject-delete-btn" onclick="deleteStudySubject()" class="hidden px-4 py-2 bg-red-500/10 text-red-400 border border-red-500/30 text-[11px] rounded-xl font-bold hover:bg-red-500/20">Delete</button>
+                    <button onclick="closeModal('study-subject-modal')" class="px-4 py-2 custom-nav border text-[11px] rounded-xl font-bold text-muted-custom hover:text-white">Cancel</button>
+                    <button onclick="saveStudySubject()" class="px-4 py-2 custom-btn text-[11px] rounded-xl font-bold">Save</button>
+                </div>
+                <p id="study-subject-error" class="text-[11px] text-red-400 mt-3 text-center font-semibold min-h-[1rem]"></p>
+            </div>
+        </div>
+        <!-- D-DAY MODAL -->
+        <div id="dday-modal" onclick="closeModal('dday-modal')" class="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+            <div onclick="event.stopPropagation()" class="custom-card rounded-3xl max-w-sm w-full p-6 shadow-2xl border">
+                <h3 id="dday-modal-title" class="text-base font-bold accent-text mb-4">Add D-Day</h3>
+                <input id="dday-id" type="hidden">
+                <div class="mb-3">
+                    <label class="block text-[10px] font-bold text-muted-custom uppercase tracking-wider mb-1">Event</label>
+                    <input id="dday-title" type="text" placeholder="e.g. Board Exam, Project Deadline" maxlength="40" class="w-full custom-nav border rounded-xl px-3 py-2 text-xs outline-none text-white">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-[10px] font-bold text-muted-custom uppercase tracking-wider mb-1">Date</label>
+                    <input id="dday-date" type="date" class="w-full custom-nav border rounded-xl px-3 py-2 text-xs outline-none text-white">
+                </div>
+                <div class="flex gap-2 justify-end">
+                    <button onclick="closeModal('dday-modal')" class="px-4 py-2 custom-nav border text-[11px] rounded-xl font-bold text-muted-custom hover:text-white">Cancel</button>
+                    <button onclick="saveDDay()" class="px-4 py-2 custom-btn text-[11px] rounded-xl font-bold">Save</button>
+                </div>
+                <p id="dday-error" class="text-[11px] text-red-400 mt-3 text-center font-semibold min-h-[1rem]"></p>
+            </div>
+        </div>
         <div id="schedule-slot-modal" onclick="closeModal('schedule-slot-modal')" class="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
             <div onclick="event.stopPropagation()" class="custom-card rounded-3xl max-w-md w-full p-6 shadow-2xl border">
                 <h3 id="schedule-slot-modal-title" class="text-base font-bold accent-text mb-4">Add Slot</h3>
@@ -1725,6 +1774,7 @@
                         <button id="tab-stopwatch" onclick="switchTab('stopwatch')" class="px-2 sm:px-2.5 lg:px-3 py-1.5 text-[11px] sm:text-xs font-bold transition-all tab-glow accent-text tab-active whitespace-nowrap">⏱️ Stopwatch</button>
                         <button id="tab-timer" onclick="switchTab('timer')" class="px-2 sm:px-2.5 lg:px-3 py-1.5 text-[11px] sm:text-xs font-bold transition-all tab-glow text-muted-custom whitespace-nowrap">⏳ Timer</button>
                         <button id="tab-pomodoro" onclick="switchTab('pomodoro')" class="px-2 sm:px-2.5 lg:px-3 py-1.5 text-[11px] sm:text-xs font-bold transition-all tab-glow text-muted-custom whitespace-nowrap">🍅 Pomodoro</button>
+                        <button id="tab-study" onclick="switchTab('study')" class="px-2 sm:px-2.5 lg:px-3 py-1.5 text-[11px] sm:text-xs font-bold transition-all tab-glow text-muted-custom whitespace-nowrap">📚 Study</button>
                         <button id="tab-journal" onclick="switchTab('journal')" class="px-2 sm:px-2.5 lg:px-3 py-1.5 text-[11px] sm:text-xs font-bold transition-all tab-glow text-muted-custom whitespace-nowrap">📖 Journal</button>
                         <button id="tab-schedule" onclick="switchTab('schedule')" class="px-2 sm:px-2.5 lg:px-3 py-1.5 text-[11px] sm:text-xs font-bold transition-all tab-glow text-muted-custom whitespace-nowrap">📅 Schedule</button>
                         <button id="tab-flowtunes" onclick="switchTab('flowtunes')" class="px-2 sm:px-2.5 lg:px-3 py-1.5 text-[11px] sm:text-xs font-bold transition-all tab-glow text-muted-custom whitespace-nowrap">🎵 flowtunes</button>
@@ -1858,6 +1908,10 @@
                 <button type="button" data-action="groups" class="mobile-more-item">
                     <span class="text-xl">👥</span>
                     <span class="text-[10px] font-bold mt-1">Groups</span>
+                </button>
+                <button type="button" data-action="study" class="mobile-more-item">
+                    <span class="text-xl">📚</span>
+                    <span class="text-[10px] font-bold mt-1">Study</span>
                 </button>
                 <button type="button" data-action="schedule" class="mobile-more-item">
                     <span class="text-xl">📅</span>
@@ -2196,7 +2250,73 @@
                     </div>
                     <button onclick="clearJournal()" class="px-3 py-1.5 bg-red-500/10 text-red-400 border border-red-500/30 rounded-xl text-xs font-semibold hover:bg-red-500/25 transition">Clear History</button>
                 </div>
+                <!-- FOCUS INSIGHTS -->
+                <div id="insights-card" class="mb-5 custom-nav rounded-2xl p-4 border">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-[10px] font-extrabold uppercase tracking-wider text-muted-custom">📊 Focus Insights</span>
+                        <span id="insights-goal-chips" class="flex items-center gap-1"></span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 mb-3 text-center">
+                        <div class="custom-nav rounded-xl p-2.5 border">
+                            <div id="insights-streak" class="text-base sm:text-lg font-extrabold accent-text mono">🔥 0</div>
+                            <div class="text-[9px] text-muted-custom font-semibold uppercase tracking-wide mt-0.5">Day Streak</div>
+                        </div>
+                        <div class="custom-nav rounded-xl p-2.5 border">
+                            <div id="insights-week-total" class="text-base sm:text-lg font-extrabold accent-text mono">0h</div>
+                            <div class="text-[9px] text-muted-custom font-semibold uppercase tracking-wide mt-0.5">This Week</div>
+                        </div>
+                        <div class="custom-nav rounded-xl p-2.5 border">
+                            <div id="insights-total" class="text-base sm:text-lg font-extrabold accent-text mono">0h</div>
+                            <div class="text-[9px] text-muted-custom font-semibold uppercase tracking-wide mt-0.5">All Time</div>
+                        </div>
+                    </div>
+                    <div id="insights-week-bars" class="flex items-end justify-between gap-1 h-14 mb-1 px-0.5"></div>
+                    <div class="flex justify-between text-[8px] sm:text-[9px] font-bold text-muted-custom px-0.5 mb-3">
+                        <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div class="flex items-center gap-2 custom-nav rounded-xl px-3 py-2 border">
+                            <span class="text-[10px] text-muted-custom font-semibold uppercase">Top subject</span>
+                            <span id="insights-top-subject" class="font-bold truncate">—</span>
+                        </div>
+                        <div class="flex items-center gap-2 custom-nav rounded-xl px-3 py-2 border">
+                            <span class="text-[10px] text-muted-custom font-semibold uppercase">Best day</span>
+                            <span id="insights-best-day" class="font-bold">—</span>
+                        </div>
+                    </div>
+                    <div id="insights-goal-row" class="hidden mt-3">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-[10px] font-bold text-muted-custom uppercase tracking-wide">🎯 Daily goal</span>
+                            <span id="insights-goal-text" class="text-[10px] font-bold accent-text mono"></span>
+                        </div>
+                        <div class="h-2 rounded-full bg-white/10 overflow-hidden">
+                            <div id="insights-goal-bar" class="h-full rounded-full" style="width:0%;background:var(--accent-primary);"></div>
+                        </div>
+                    </div>
+                </div>
                 <div id="journal-list" class="space-y-3 max-h-[60vh] overflow-y-auto pr-1"></div>
+            </div>
+            <!-- STUDY SECTION (one-tap subject tracking) -->
+            <div id="study-container" class="hidden max-w-4xl mx-auto">
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+                    <div>
+                        <h3 class="text-lg sm:text-xl font-bold accent-text flex items-center gap-2">📚 Study</h3>
+                        <p class="text-[11px] sm:text-xs text-muted-custom mt-1">Tap a subject to start tracking, tap again to stop. Time is saved to your journal automatically.</p>
+                    </div>
+                </div>
+                <div id="study-week-card" class="custom-card rounded-3xl p-4 border mb-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[10px] font-extrabold uppercase tracking-wider text-muted-custom">This week by subject</span>
+                        <span id="study-week-total" class="text-[11px] font-bold accent-text mono"></span>
+                    </div>
+                    <div id="study-week-bars" class="space-y-1.5"></div>
+                </div>
+                <div id="study-grid" class="grid grid-cols-2 lg:grid-cols-3 gap-3"></div>
+                <div id="study-empty" class="hidden text-center py-10 custom-card rounded-3xl border">
+                    <div class="text-3xl mb-2">📚</div>
+                    <p class="text-xs text-muted-custom mb-4">No subjects yet. Add the subjects you study and tap one to start a session.</p>
+                    <button onclick="openStudySubjectModal()" class="px-4 py-2 custom-btn text-xs rounded-xl font-bold">+ Add Subject</button>
+                </div>
             </div>
             <!-- FLOWTUNES SECTION -->
             <div id="flowtunes-container" class="hidden w-full h-full pt-1 flex flex-col">
@@ -2238,6 +2358,15 @@
                     </div>
                 </div>
                 <input id="schedule-photo-input" type="file" accept="image/*" class="hidden" onchange="handleSchedulePhotoUpload(event)">
+                <!-- D-DAY COUNTDOWNS -->
+                <div id="dday-card" class="mb-4 custom-card rounded-3xl p-4 border">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[10px] font-extrabold uppercase tracking-wider text-muted-custom">🎯 D-Day Countdowns</span>
+                        <button onclick="openDDayModal()" class="px-2.5 py-1 custom-nav border text-[10px] font-bold text-muted-custom hover:text-white rounded-lg flex items-center gap-1">+ D-Day</button>
+                    </div>
+                    <div id="dday-list" class="space-y-1.5"></div>
+                    <p id="dday-empty" class="text-[10px] text-muted-custom italic text-center py-2">No countdowns yet. Add an exam or due date to track the days left.</p>
+                </div>
                 <div id="schedule-photo-wrap" class="hidden mb-5 custom-card rounded-3xl p-3 border">
                     <div class="relative rounded-2xl overflow-hidden">
                         <img id="schedule-photo-img" src="" alt="Timetable" class="w-full h-auto max-h-[60vh] object-contain">
@@ -2419,8 +2548,12 @@
 
             // App version + changelog. Bump APP_VERSION whenever you ship a
             // notable update; the app can then highlight new entries.
-            const APP_VERSION = '1.5.1';
+            const APP_VERSION = '1.6.0';
             const CHANGELOG = [{
+                version: '1.6.0',
+                date: '2026-09-23',
+                items: ['New Study tab: one-tap subject tracking. Add your subjects, tap a subject to start counting, tap it again to stop - time is logged to your journal automatically, and only one subject tracks at a time (tapping another subject switches).', 'Study shows today\'s total and this week\'s total per subject, with a live ticking clock on the subject you are tracking.', 'Focus Insights on the Journal tab: day streak, this-week total with a mini weekly chart, top subject, best day of week, and all-time total.', 'Daily goal: pick a target (30m to 8h) and watch a progress bar fill up; hit it once and you get a celebration - it resets every day.', 'D-Day countdowns in the Schedule tab: add exams and deadlines, see days left with color-coded urgency (Today / D-1 / D-3), and get a reminder at D-3, D-1, and on the day itself.', 'Study subjects, the active study session, and D-Day countdowns all sync across your devices in a room.']
+            }, {
                 version: '1.5.1',
                 date: '2026-09-23',
                 items: ['Fixed Schedule: if another device in the same room was still running an older app build (or imported room data was missing fields), the Schedule tab could break after deleting slots - the Save button did nothing and the slot list went blank. Schedule data is now self-repairing on both devices, so a mixed old/new device room can no longer lock you out of adding slots.']
@@ -4029,6 +4162,12 @@
                 localStorage.setItem(roomKey('pomoharbor_journal'), JSON.stringify(journal));
                 renderJournalUI();
                 scheduleCloudSync();
+                // A just-finished session may have crossed the daily goal.
+                try {
+                    checkDailyGoalHit();
+                } catch (e) {
+                    console.warn('daily goal check failed', e);
+                }
             }
 
             function clearJournal() {
@@ -4051,6 +4190,7 @@
             }
 
             function renderJournalUI() {
+                renderInsights();
                 const journalContainer = document.getElementById('journal-list');
                 if (!journalContainer)
                     return;
@@ -4265,7 +4405,7 @@
                 if (journalBtn)
                     journalBtn.className = tab === 'journal' ? 'mobile-tab-btn mobile-tab-active' : 'mobile-tab-btn mobile-tab-inactive';
                 if (moreBtn)
-                    moreBtn.className = (tab === 'flowtunes' || tab === 'groups' || tab === 'schedule') ? 'mobile-tab-btn mobile-tab-active' : 'mobile-tab-btn mobile-tab-inactive';
+                    moreBtn.className = (tab === 'flowtunes' || tab === 'groups' || tab === 'schedule' || tab === 'study') ? 'mobile-tab-btn mobile-tab-active' : 'mobile-tab-btn mobile-tab-inactive';
             }
 
             function renderMobileTimersSegment() {
@@ -4337,6 +4477,9 @@
                         break;
                     case 'schedule':
                         switchTab('schedule');
+                        break;
+                    case 'study':
+                        switchTab('study');
                         break;
                     case 'search':
                         openSearchPanel();
@@ -4412,7 +4555,7 @@
                     return;
 
                 currentTab = tab;
-                ['stopwatch', 'timer', 'pomodoro', 'journal', 'schedule', 'flowtunes', 'groups'].forEach(t => {
+                ['stopwatch', 'timer', 'pomodoro', 'study', 'journal', 'schedule', 'flowtunes', 'groups'].forEach(t => {
                     const el = document.getElementById(`tab-${t}`);
                     if (el)
                         el.className = t === tab ? "px-2 sm:px-2.5 lg:px-3 py-1.5 text-[11px] sm:text-xs font-bold transition-all tab-glow accent-text tab-active whitespace-nowrap" : "px-2 sm:px-2.5 lg:px-3 py-1.5 text-[11px] sm:text-xs font-bold transition-all tab-glow text-muted-custom whitespace-nowrap";
@@ -4440,6 +4583,8 @@
                         addLabel.textContent = 'New Timer';
                     else if (tab === 'schedule')
                         addLabel.textContent = 'New Slot';
+                    else if (tab === 'study')
+                        addLabel.textContent = 'New Subject';
                     else
                         addLabel.textContent = 'New';
                 }
@@ -4786,6 +4931,10 @@
                     openScheduleSlotModal();
                     return;
                 }
+                if (currentTab === 'study') {
+                    openStudySubjectModal();
+                    return;
+                }
                 const count = manualTimerCount(currentTab);
                 if (count >= MAX_LIMIT) {
                     const limitTypeEl = document.getElementById('limit-type-text');
@@ -5040,6 +5189,13 @@
                         elapsed += serverNow() - pomodoroState.startTime;
                     let remaining = Math.max(0, currentTarget - elapsed);
                     document.getElementById('pomo-display').innerText = formatPomoTime(remaining);
+                } else if (currentTab === 'study') {
+                    // Live clock on the running subject tile.
+                    if (studySession) {
+                        const el = document.getElementById('study-time-' + studySession.subjectId);
+                        if (el)
+                            el.innerText = formatStudyTime(studyElapsedMs());
+                    }
                 } else if (currentTab !== 'flowtunes' && currentTab !== 'journal') {
                     timers.forEach(timer => {
                         if (timer.running) {
@@ -5082,6 +5238,7 @@
                 const flowtunesContainer = document.getElementById('flowtunes-container');
                 const journalContainer = document.getElementById('journal-container');
                 const scheduleContainer = document.getElementById('schedule-container');
+                const studyContainer = document.getElementById('study-container');
                 const groupsContainer = document.getElementById('groups-container');
                 const groupViewContainer = document.getElementById('group-view-container');
                 const viewDashboardContainer = document.getElementById('view-dashboard-container');
@@ -5095,6 +5252,7 @@
                     pomoContainer.classList.add('hidden');
                     journalContainer.classList.add('hidden');
                     scheduleContainer.classList.add('hidden');
+                    studyContainer.classList.add('hidden');
                     groupsContainer.classList.add('hidden');
                     groupViewContainer.classList.add('hidden');
                     viewDashboardContainer.classList.add('hidden');
@@ -5110,6 +5268,7 @@
                     grid.classList.add('hidden');
                     pomoContainer.classList.add('hidden');
                     scheduleContainer.classList.add('hidden');
+                    studyContainer.classList.add('hidden');
                     groupsContainer.classList.add('hidden');
                     groupViewContainer.classList.add('hidden');
                     viewDashboardContainer.classList.add('hidden');
@@ -5124,15 +5283,33 @@
                 if (currentTab === 'schedule') {
                     grid.classList.add('hidden');
                     pomoContainer.classList.add('hidden');
+                    studyContainer.classList.add('hidden');
                     groupsContainer.classList.add('hidden');
                     groupViewContainer.classList.add('hidden');
                     viewDashboardContainer.classList.add('hidden');
                     emptyState.classList.add('hidden');
                     scheduleContainer.classList.remove('hidden');
                     renderSchedule();
+                    renderDDays();
                     return;
                 } else {
                     scheduleContainer.classList.add('hidden');
+                }
+
+                if (currentTab === 'study') {
+                    grid.classList.add('hidden');
+                    pomoContainer.classList.add('hidden');
+                    journalContainer.classList.add('hidden');
+                    scheduleContainer.classList.add('hidden');
+                    groupsContainer.classList.add('hidden');
+                    groupViewContainer.classList.add('hidden');
+                    viewDashboardContainer.classList.add('hidden');
+                    emptyState.classList.add('hidden');
+                    studyContainer.classList.remove('hidden');
+                    renderStudy();
+                    return;
+                } else {
+                    studyContainer.classList.add('hidden');
                 }
 
                 if (currentTab === 'pomodoro') {
@@ -5408,6 +5585,11 @@
                         slots: [],
                         remindersEnabled: true
                     },
+                    studySubjects: JSON.parse(localStorage.getItem(roomKey('pomoharbor_study_subjects'))) || [],
+                    // No local session -> push the idle sentinel so other
+                    // devices clear any running session they were showing.
+                    studySession: JSON.parse(localStorage.getItem(roomKey('pomoharbor_study_session'))) || STUDY_SESSION_IDLE,
+                    dDays: JSON.parse(localStorage.getItem(roomKey('pomoharbor_ddays'))) || [],
                     theme: localStorage.getItem(roomKey('pomoharbor_fmhy_theme')) || 'catppuccin',
                     amoled: localStorage.getItem(roomKey('pomoharbor_amoled_mode')) === 'true',
                     translucent: localStorage.getItem(roomKey('pomoharbor_translucent_mode')) === 'true',
@@ -5517,6 +5699,27 @@
                         localStorage.setItem(roomKey('pomoharbor_schedule'), JSON.stringify(scheduleState));
                         if (currentTab === 'schedule')
                             renderSchedule();
+                    }
+                    // Same lesson as schedule: older builds push none of these
+                    // keys, and mixed builds can push partial/corrupt shapes -
+                    // always normalize before assigning.
+                    if (Array.isArray(remote.studySubjects)) {
+                        studySubjects = normalizeStudySubjects(remote.studySubjects);
+                        localStorage.setItem(roomKey('pomoharbor_study_subjects'), JSON.stringify(studySubjects));
+                        if (currentTab === 'study')
+                            renderStudy();
+                    }
+                    if (remote.studySession !== undefined) {
+                        studySession = normalizeStudySession(remote.studySession);
+                        localStorage.setItem(roomKey('pomoharbor_study_session'), JSON.stringify(studySession));
+                        if (currentTab === 'study')
+                            renderStudy();
+                    }
+                    if (Array.isArray(remote.dDays)) {
+                        dDays = normalizeDDays(remote.dDays);
+                        localStorage.setItem(roomKey('pomoharbor_ddays'), JSON.stringify(dDays));
+                        if (currentTab === 'schedule')
+                            renderDDays();
                     }
                     if (remote.theme) {
                         document.documentElement.setAttribute('data-theme', remote.theme);
@@ -6864,7 +7067,698 @@
             function startScheduleReminderLoop() {
                 if (scheduleReminderInterval)
                     return;
-                scheduleReminderInterval = setInterval(checkScheduleReminders, 60000);
+                scheduleReminderInterval = setInterval(runPeriodicChecks, 60000);
+            }
+
+            // ============================================================
+            // STUDY: one-tap subject tracking
+            // Tap a subject tile to start counting, tap again to stop. The
+            // finished session is logged to the journal (category "Study"),
+            // so Study time flows into Insights and the weekly stats for
+            // free. Only one subject tracks at a time - tapping a different
+            // subject switches (stops + logs the old one, starts the new).
+            // ============================================================
+            const STUDY_COLORS = ['indigo', 'emerald', 'amber', 'rose', 'sky', 'violet', 'slate'];
+            const STUDY_COLOR_HEX = {
+                indigo: '#818cf8',
+                emerald: '#34d399',
+                amber: '#fbbf24',
+                rose: '#fb7185',
+                sky: '#38bdf8',
+                violet: '#a78bfa',
+                slate: '#94a3b8'
+            };
+            const MAX_STUDY_SUBJECTS = 12;
+            let studySubjects = normalizeStudySubjects(JSON.parse(localStorage.getItem(roomKey('pomoharbor_study_subjects'))) || []);
+            // One active session at a time (null = idle). Survives reloads;
+            // the elapsed clock is absolute (serverNow-based) so every device
+            // in the room reads the same number.
+            let studySession = null;
+            {
+                const s = JSON.parse(localStorage.getItem(roomKey('pomoharbor_study_session'))) || null;
+                studySession = normalizeStudySession(s);
+            }
+
+            // Kept separate from the timers array on purpose: study sessions
+            // must not consume the 7-timer limit, must not clutter the
+            // Stopwatch/Timer tabs, and must not fight the alarm system.
+
+            function normalizeStudySubjects(raw) {
+                if (!Array.isArray(raw))
+                    return [];
+                const seen = new Set();
+                const out = [];
+                raw.forEach( s => {
+                    if (!s || typeof s !== 'object' || !s.name)
+                        return;
+                    const name = String(s.name).trim().slice(0, 40);
+                    if (!name || seen.has(name.toLowerCase()))
+                        return;
+                    seen.add(name.toLowerCase());
+                    out.push({
+                        id: s.id ? String(s.id) : 'sub_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+                        name: name,
+                        color: STUDY_COLORS.includes(s.color) ? s.color : 'indigo'
+                    });
+                }
+                );
+                return out.slice(0, MAX_STUDY_SUBJECTS);
+            }
+
+            function normalizeStudySession(raw) {
+                if (!raw || typeof raw !== 'object' || !raw.subjectId || typeof raw.startTime !== 'number')
+                    return null;
+                return {
+                    subjectId: String(raw.subjectId),
+                    subjectName: raw.subjectName ? String(raw.subjectName).slice(0, 40) : 'Study',
+                    startTime: raw.startTime,
+                    elapsedBefore: typeof raw.elapsedBefore === 'number' && raw.elapsedBefore >= 0 ? raw.elapsedBefore : 0
+                };
+            }
+
+            function saveStudySubjects() {
+                studySubjects = normalizeStudySubjects(studySubjects);
+                localStorage.setItem(roomKey('pomoharbor_study_subjects'), JSON.stringify(studySubjects));
+                pushStateToCloud();
+            }
+
+            // Sentinel for "no active study session". A bare null / {} write
+            // deletes the key in the cloud, which remote devices would read
+            // as "no key" - indistinguishable from an older build that has no
+            // study feature - so a stale running session would never clear on
+            // the other device. An object with real content survives the trip.
+            const STUDY_SESSION_IDLE = {
+                inactive: true
+            };
+
+            function saveStudySession() {
+                localStorage.setItem(roomKey('pomoharbor_study_session'), JSON.stringify(studySession || STUDY_SESSION_IDLE));
+                pushStateToCloud();
+            }
+
+            function studyElapsedMs() {
+                if (!studySession)
+                    return 0;
+                return studySession.elapsedBefore + (serverNow() - studySession.startTime);
+            }
+
+            function formatStudyTime(ms) {
+                const totalSec = Math.max(0, Math.floor(ms / 1000));
+                const h = Math.floor(totalSec / 3600);
+                const m = Math.floor((totalSec % 3600) / 60);
+                const s = totalSec % 60;
+                return (h > 0 ? h + ':' : '') + m.toString().padStart(2, '0') + ':' + s.toString().padStart(2, '0');
+            }
+
+            function humanDurationMs(ms) {
+                const totalMin = Math.floor(ms / 60000);
+                const h = Math.floor(totalMin / 60);
+                const m = totalMin % 60;
+                if (h > 0)
+                    return h + 'h ' + m + 'm';
+                if (m > 0)
+                    return m + 'm';
+                return Math.max(0, Math.floor(ms / 1000)) + 's';
+            }
+
+            function studyJournalTotalMs(subjectName, dateKeyOnly) {
+                const journal = JSON.parse(localStorage.getItem(roomKey('pomoharbor_journal'))) || [];
+                return journal.reduce( (sum, e) => (e.category === 'Study' && e.title === subjectName && (!dateKeyOnly || e.date === dateKeyOnly)) ? sum + (e.durationMs || 0) : sum, 0 );
+            }
+
+            function stopStudySession(logIt) {
+                if (!studySession)
+                    return;
+                const started = studySession.startTime - studySession.elapsedBefore;
+                if (logIt !== false && studyElapsedMs() >= 2000)
+                    logSessionToJournal(studySession.subjectName, 'Study', started, serverNow());
+                studySession = null;
+                saveStudySession();
+            }
+
+            function tapStudySubject(subjectId) {
+                unlockAudio();
+                const subj = studySubjects.find( s => s.id === subjectId );
+                if (!subj)
+                    return;
+                if (studySession && studySession.subjectId === subjectId) {
+                    const ms = studyElapsedMs();
+                    stopStudySession(true);
+                    showToast('Stopped ' + subj.name + (ms >= 2000 ? ' — ' + humanDurationMs(ms) : ''));
+                } else {
+                    if (studySession)
+                        stopStudySession(true);
+                    studySession = {
+                        subjectId: subjectId,
+                        subjectName: subj.name,
+                        startTime: serverNow(),
+                        elapsedBefore: 0
+                    };
+                    saveStudySession();
+                    showToast('Tracking ' + subj.name + ' 📚');
+                }
+                renderStudy();
+            }
+
+            function openStudySubjectModal(subjectId) {
+                const idEl = document.getElementById('study-subject-id');
+                const nameEl = document.getElementById('study-subject-name');
+                const colorEl = document.getElementById('study-subject-color');
+                const errEl = document.getElementById('study-subject-error');
+                const titleEl = document.getElementById('study-subject-modal-title');
+                const deleteBtn = document.getElementById('study-subject-delete-btn');
+                if (errEl)
+                    errEl.innerText = '';
+                if (subjectId) {
+                    const subj = studySubjects.find( s => s.id === subjectId );
+                    if (!subj)
+                        return;
+                    titleEl.innerText = 'Edit Subject';
+                    idEl.value = subj.id;
+                    nameEl.value = subj.name;
+                    colorEl.value = STUDY_COLORS.includes(subj.color) ? subj.color : 'indigo';
+                    deleteBtn.classList.remove('hidden');
+                } else {
+                    titleEl.innerText = 'Add Subject';
+                    idEl.value = '';
+                    nameEl.value = '';
+                    colorEl.value = 'indigo';
+                    deleteBtn.classList.add('hidden');
+                }
+                openModal('study-subject-modal');
+            }
+
+            function saveStudySubject() {
+                const id = document.getElementById('study-subject-id').value;
+                const name = document.getElementById('study-subject-name').value.trim().slice(0, 40);
+                const color = document.getElementById('study-subject-color').value;
+                const errEl = document.getElementById('study-subject-error');
+                errEl.innerText = '';
+                if (!name) {
+                    errEl.innerText = 'Please enter a subject name.';
+                    return;
+                }
+                const dup = studySubjects.find( s => s.name.toLowerCase() === name.toLowerCase() && s.id !== id );
+                if (dup) {
+                    errEl.innerText = 'A subject with that name already exists.';
+                    return;
+                }
+                if (id) {
+                    const subj = studySubjects.find( s => s.id === id );
+                    if (subj) {
+                        subj.name = name;
+                        subj.color = STUDY_COLORS.includes(color) ? color : 'indigo';
+                        // Keep the live session label in sync with the rename.
+                        if (studySession && studySession.subjectId === id)
+                            studySession.subjectName = name;
+                    }
+                } else {
+                    if (studySubjects.length >= MAX_STUDY_SUBJECTS) {
+                        errEl.innerText = 'Maximum ' + MAX_STUDY_SUBJECTS + ' subjects allowed.';
+                        return;
+                    }
+                    studySubjects.push({
+                        id: 'sub_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+                        name: name,
+                        color: STUDY_COLORS.includes(color) ? color : 'indigo'
+                    });
+                }
+                saveStudySubjects();
+                saveStudySession();
+                closeModal('study-subject-modal');
+                renderStudy();
+                showToast(id ? 'Subject updated' : 'Subject added');
+            }
+
+            function deleteStudySubject() {
+                const id = document.getElementById('study-subject-id').value;
+                if (!id)
+                    return;
+                if (studySession && studySession.subjectId === id)
+                    stopStudySession(true);
+                studySubjects = studySubjects.filter( s => s.id !== id );
+                saveStudySubjects();
+                closeModal('study-subject-modal');
+                renderStudy();
+                showToast('Subject deleted');
+            }
+
+            function renderStudy() {
+                const container = document.getElementById('study-container');
+                if (!container)
+                    return;
+                if (currentTab !== 'study') {
+                    container.classList.add('hidden');
+                    return;
+                }
+                container.classList.remove('hidden');
+
+                const subjects = normalizeStudySubjects(studySubjects);
+                const now = new Date();
+                const todayKey = now.toLocaleDateString('en-CA');
+                // This week = Monday..Sunday.
+                const dayIdx = (now.getDay() + 6) % 7;
+                const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayIdx);
+                const weekDates = [];
+                for (let i = 0; i < 7; i++) {
+                    const d = new Date(monday);
+                    d.setDate(monday.getDate() + i);
+                    weekDates.push(d.toLocaleDateString('en-CA'));
+                }
+
+                // Weekly totals per subject (journal is the source of truth).
+                const journal = JSON.parse(localStorage.getItem(roomKey('pomoharbor_journal'))) || [];
+                const weekMs = {};
+                let weekTotal = 0;
+                journal.forEach( e => {
+                    if (e.category !== 'Study' || !weekDates.includes(e.date))
+                        return;
+                    weekMs[e.title] = (weekMs[e.title] || 0) + (e.durationMs || 0);
+                    weekTotal += e.durationMs || 0;
+                }
+                );
+                // Include the live session so the bar grows while tracking.
+                if (studySession) {
+                    weekMs[studySession.subjectName] = (weekMs[studySession.subjectName] || 0) + studyElapsedMs();
+                    weekTotal += studyElapsedMs();
+                }
+
+                const weekTotalEl = document.getElementById('study-week-total');
+                if (weekTotalEl)
+                    weekTotalEl.innerText = weekTotal > 0 ? humanDurationMs(weekTotal) : 'No focus yet this week';
+
+                const weekBars = document.getElementById('study-week-bars');
+                if (weekBars) {
+                    const rows = Object.keys(weekMs).map( name => ({
+                        name,
+                        ms: weekMs[name],
+                        hex: (subjects.find( s => s.name === name ) || {}).color ? STUDY_COLOR_HEX[subjects.find( s => s.name === name ).color] || '#818cf8' : '#818cf8'
+                    }
+                    )).sort( (a, b) => b.ms - a.ms ).slice(0, 6);
+                    weekBars.innerHTML = rows.length ? rows.map( r => {
+                        const pct = weekTotal > 0 ? Math.max(4, Math.round(r.ms / weekTotal * 100)) : 0;
+                        return `<div class="flex items-center gap-2">
+                            <span class="w-20 sm:w-24 shrink-0 text-[10px] font-semibold truncate" title="${escapeHtml(r.name)}">${escapeHtml(r.name)}</span>
+                            <div class="flex-1 h-2 rounded-full bg-white/10 overflow-hidden">
+                                <div class="h-full rounded-full" style="width:${pct}%;background:${r.hex}"></div>
+                            </div>
+                            <span class="w-16 shrink-0 text-right text-[10px] mono font-bold text-muted-custom">${humanDurationMs(r.ms)}</span>
+                        </div>`;
+                    }
+                    ).join('') : '<p class="text-[10px] text-muted-custom italic text-center py-2">Start a session to see weekly totals here.</p>';
+                }
+
+                const grid = document.getElementById('study-grid');
+                const empty = document.getElementById('study-empty');
+                if (!grid)
+                    return;
+                if (subjects.length === 0) {
+                    grid.innerHTML = '';
+                    if (empty)
+                        empty.classList.remove('hidden');
+                    return;
+                }
+                if (empty)
+                    empty.classList.add('hidden');
+                grid.innerHTML = subjects.map( s => {
+                    const running = !!(studySession && studySession.subjectId === s.id);
+                    const todayMs = studyJournalTotalMs(s.name, todayKey) + (running ? studyElapsedMs() : 0);
+                    const hex = STUDY_COLOR_HEX[s.color] || STUDY_COLOR_HEX.indigo;
+                    const style = running ? `border-color:${hex};box-shadow:0 0 26px ${hex}44;` : '';
+                    const timeText = running ? formatStudyTime(studyElapsedMs()) : (todayMs > 0 ? humanDurationMs(todayMs) : '0m');
+                    return `<div onclick="tapStudySubject('${s.id}')" class="relative custom-card rounded-3xl p-4 border cursor-pointer transition-all hover:border-white/20 select-none" style="${style}">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="w-3 h-3 rounded-full shrink-0" style="background:${hex}"></span>
+                            <button onclick="event.stopPropagation(); openStudySubjectModal('${s.id}')" class="text-[10px] px-1 py-0.5 rounded-md hover:bg-white/10" title="Edit subject">✏️</button>
+                        </div>
+                        <div class="text-sm font-bold truncate mb-1">${escapeHtml(s.name)}</div>
+                        <div id="study-time-${s.id}" class="mono text-xl sm:text-2xl font-extrabold" style="color:${running ? hex : 'var(--text-muted)'}">${timeText}</div>
+                        <div class="text-[9px] font-bold uppercase tracking-wide mt-1 ${running ? '' : 'text-muted-custom'}" style="${running ? 'color:' + hex : ''}">${running ? '● Tracking — tap to stop' : 'Today — tap to start'}</div>
+                    </div>`;
+                }
+                ).join('');
+            }
+
+            // ============================================================
+            // FOCUS INSIGHTS (streak / weekly chart / goal) - Journal tab
+            // Everything is computed from the journal, so study sessions,
+            // pomodoro cycles and timers all count toward the same numbers.
+            // ============================================================
+            function dateKey(d) {
+                return d.toLocaleDateString('en-CA');
+            }
+
+            function renderInsights() {
+                const card = document.getElementById('insights-card');
+                if (!card)
+                    return;
+                const journal = JSON.parse(localStorage.getItem(roomKey('pomoharbor_journal'))) || [];
+                const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                const byDate = {};
+                const byTitle = {};
+                const byTitleWeek = {};
+                const byWeekday = [0, 0, 0, 0, 0, 0, 0];
+                let totalMs = 0;
+                const now = new Date();
+                const dayIdx = (now.getDay() + 6) % 7;
+                const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayIdx);
+                const weekDates = [];
+                for (let i = 0; i < 7; i++) {
+                    const d = new Date(monday);
+                    d.setDate(monday.getDate() + i);
+                    weekDates.push(d.toLocaleDateString('en-CA'));
+                }
+                journal.forEach( e => {
+                    const ms = e.durationMs || 0;
+                    if (!e.date)
+                        return;
+                    byDate[e.date] = (byDate[e.date] || 0) + ms;
+                    totalMs += ms;
+                    const title = e.title || 'Untitled';
+                    byTitle[title] = (byTitle[title] || 0) + ms;
+                    if (weekDates.includes(e.date))
+                        byTitleWeek[title] = (byTitleWeek[title] || 0) + ms;
+                    const parts = e.date.split('-').map(Number);
+                    if (parts.length === 3 && parts[0] && parts[1] && parts[2]) {
+                        const wd = (new Date(parts[0], parts[1] - 1, parts[2]).getDay() + 6) % 7;
+                        byWeekday[wd] += ms;
+                    }
+                }
+                );
+
+                const setTxt = (id, txt) => {
+                    const el = document.getElementById(id);
+                    if (el)
+                        el.innerText = txt;
+                };
+
+                // Streak: consecutive days with at least one logged session.
+                // If today is still empty, count through yesterday.
+                let streak = 0;
+                const cursor = new Date();
+                if (!byDate[dateKey(cursor)])
+                    cursor.setDate(cursor.getDate() - 1);
+                while (byDate[dateKey(cursor)]) {
+                    streak++;
+                    cursor.setDate(cursor.getDate() - 1);
+                }
+
+                const weekVals = weekDates.map( k => byDate[k] || 0 );
+                const weekMs = weekVals.reduce( (a, b) => a + b, 0 );
+                const todayMs = weekVals[dayIdx] || 0;
+
+                setTxt('insights-streak', '🔥 ' + streak);
+                setTxt('insights-week-total', humanDurationMs(weekMs));
+                setTxt('insights-total', humanDurationMs(totalMs));
+
+                const barsEl = document.getElementById('insights-week-bars');
+                if (barsEl) {
+                    const maxV = Math.max.apply(null, weekVals.concat([1]));
+                    barsEl.innerHTML = weekVals.map( (v, i) => {
+                        const h = v > 0 ? Math.max(10, Math.round(v / maxV * 100)) : 4;
+                        const isToday = i === dayIdx;
+                        const bg = v > 0 ? (isToday ? 'var(--accent-primary)' : 'var(--accent-glow)') : '';
+                        return `<div class="flex-1 rounded-t-md" title="${DAY_NAMES[i]}: ${humanDurationMs(v)}" style="height:${h}%;background:${bg || 'rgba(255,255,255,0.08)'}"></div>`;
+                    }
+                    ).join('');
+                }
+
+                const titleSource = Object.keys(byTitleWeek).length > 0 ? byTitleWeek : byTitle;
+                let topName = '—';
+                let topMs = 0;
+                Object.keys(titleSource).forEach( t => {
+                    if (titleSource[t] > topMs) {
+                        topMs = titleSource[t];
+                        topName = t;
+                    }
+                }
+                );
+                setTxt('insights-top-subject', topName);
+
+                let bestIdx = -1;
+                byWeekday.forEach( (ms, i) => {
+                    if (bestIdx === -1 || ms > byWeekday[bestIdx])
+                        bestIdx = i;
+                }
+                );
+                setTxt('insights-best-day', totalMs > 0 ? DAY_NAMES[bestIdx] : '—');
+
+                // Daily goal
+                const goalMin = Number(userSettings.dailyGoalMinutes) || 0;
+                const chips = document.getElementById('insights-goal-chips');
+                if (chips) {
+                    const options = [[0, 'Off'], [30, '30m'], [60, '1h'], [120, '2h'], [240, '4h'], [480, '8h']];
+                    chips.innerHTML = options.map( o => `<button onclick="setDailyGoal(${o[0]})" class="px-2 py-0.5 text-[9px] font-bold rounded-lg border ${goalMin === o[0] ? 'custom-btn' : 'custom-nav text-muted-custom hover:text-white'}">${o[1]}</button>`).join('');
+                }
+                const goalRow = document.getElementById('insights-goal-row');
+                if (goalRow) {
+                    if (goalMin > 0) {
+                        goalRow.classList.remove('hidden');
+                        const pct = Math.min(100, Math.round(todayMs / (goalMin * 60000) * 100));
+                        const bar = document.getElementById('insights-goal-bar');
+                        if (bar)
+                            bar.style.width = pct + '%';
+                        setTxt('insights-goal-text', humanDurationMs(todayMs) + ' / ' + humanDurationMs(goalMin * 60000) + (pct >= 100 ? ' 🎉' : ''));
+                    } else {
+                        goalRow.classList.add('hidden');
+                    }
+                }
+            }
+
+            function setDailyGoal(mins) {
+                updateSetting('dailyGoalMinutes', mins);
+                renderInsights();
+            }
+
+            // Fires the one-per-day "goal hit" toast. Called when a session
+            // ends and from the 60s loop (in case time accumulates elsewhere).
+            function checkDailyGoalHit() {
+                const goalMin = Number(userSettings.dailyGoalMinutes) || 0;
+                if (goalMin <= 0)
+                    return;
+                const todayKeyStr = dateKey(new Date());
+                const journal = JSON.parse(localStorage.getItem(roomKey('pomoharbor_journal'))) || [];
+                const todayMs = journal.reduce( (sum, e) => (e.date === todayKeyStr ? sum + (e.durationMs || 0) : sum), 0 );
+                if (todayMs < goalMin * 60000)
+                    return;
+                const flagKey = roomKey('pomoharbor_goalhit') + '_' + todayKeyStr;
+                if (localStorage.getItem(flagKey) === '1')
+                    return;
+                localStorage.setItem(flagKey, '1');
+                showToast('🎯 Daily goal hit! ' + humanDurationMs(todayMs) + ' of focus today. Great work!');
+            }
+
+            // ============================================================
+            // D-DAY COUNTDOWNS (exams, deadlines) - Schedule tab
+            // ============================================================
+            const MAX_DDAYS = 20;
+            let dDays = normalizeDDays(JSON.parse(localStorage.getItem(roomKey('pomoharbor_ddays'))) || []);
+
+            function normalizeDDays(raw) {
+                if (!Array.isArray(raw))
+                    return [];
+                const seen = new Set();
+                const out = [];
+                raw.forEach( d => {
+                    if (!d || typeof d !== 'object' || !d.title || !/^\d{4}-\d{2}-\d{2}$/.test(String(d.date || '')))
+                        return;
+                    const title = String(d.title).trim().slice(0, 40);
+                    const date = String(d.date);
+                    const dedupe = date + '|' + title.toLowerCase();
+                    if (seen.has(dedupe))
+                        return;
+                    seen.add(dedupe);
+                    out.push({
+                        id: d.id ? String(d.id) : 'dd_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+                        title: title,
+                        date: date
+                    });
+                }
+                );
+                return out.slice(0, MAX_DDAYS);
+            }
+
+            function saveDDays() {
+                dDays = normalizeDDays(dDays);
+                localStorage.setItem(roomKey('pomoharbor_ddays'), JSON.stringify(dDays));
+                pushStateToCloud();
+            }
+
+            function isValidDateStr(dateStr) {
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(String(dateStr || '')))
+                    return false;
+                const parts = dateStr.split('-').map(Number);
+                const d = new Date(parts[0], parts[1] - 1, parts[2]);
+                return d.getFullYear() === parts[0] && d.getMonth() === parts[1] - 1 && d.getDate() === parts[2];
+            }
+
+            function dDaysUntil(dateStr) {
+                const parts = dateStr.split('-').map(Number);
+                const now = new Date();
+                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                const target = new Date(parts[0], parts[1] - 1, parts[2]);
+                return Math.round((target.getTime() - today.getTime()) / 86400000);
+            }
+
+            function renderDDays() {
+                const list = document.getElementById('dday-list');
+                const empty = document.getElementById('dday-empty');
+                if (!list)
+                    return;
+                const items = normalizeDDays(dDays).slice().sort( (a, b) => (a.date < b.date ? -1 : 1) );
+                if (empty)
+                    empty.classList.toggle('hidden', items.length > 0);
+                list.innerHTML = items.map( d => {
+                    const dr = dDaysUntil(d.date);
+                    let badge;
+                    let cls;
+                    if (dr < 0) {
+                        badge = 'D+' + (-dr);
+                        cls = 'text-slate-400 border-white/10 bg-white/5';
+                    } else if (dr === 0) {
+                        badge = 'Today!';
+                        cls = 'text-rose-400 border-rose-500/40 bg-rose-500/10';
+                    } else if (dr === 1) {
+                        badge = 'D-1';
+                        cls = 'text-rose-400 border-rose-500/40 bg-rose-500/10';
+                    } else if (dr <= 3) {
+                        badge = 'D-' + dr;
+                        cls = 'text-amber-400 border-amber-500/40 bg-amber-500/10';
+                    } else if (dr <= 7) {
+                        badge = 'D-' + dr;
+                        cls = 'text-amber-300 border-amber-400/30 bg-amber-400/10';
+                    } else {
+                        badge = 'D-' + dr;
+                        cls = 'text-sky-300 border-sky-500/30 bg-sky-500/10';
+                    }
+                    return `<div onclick="openDDayModal('${d.id}')" class="flex items-center gap-3 p-2.5 custom-nav rounded-xl border cursor-pointer hover:border-white/20 transition">
+                        <span class="shrink-0 px-2 py-1 rounded-lg border text-[10px] font-extrabold mono min-w-[64px] text-center ${cls}">${badge}</span>
+                        <span class="flex-1 text-xs font-semibold truncate">${escapeHtml(d.title)}</span>
+                        <span class="text-[10px] text-muted-custom mono shrink-0">${d.date}</span>
+                        <button onclick="event.stopPropagation(); deleteDDay('${d.id}')" class="text-[11px] text-muted-custom hover:text-red-400 px-1" title="Delete">🗑️</button>
+                    </div>`;
+                }
+                ).join('');
+            }
+
+            function openDDayModal(id) {
+                const idEl = document.getElementById('dday-id');
+                const titleEl = document.getElementById('dday-title');
+                const dateEl = document.getElementById('dday-date');
+                const errEl = document.getElementById('dday-error');
+                if (errEl)
+                    errEl.innerText = '';
+                if (id) {
+                    const d = dDays.find( x => x.id === id );
+                    if (!d)
+                        return;
+                    document.getElementById('dday-modal-title').innerText = 'Edit D-Day';
+                    idEl.value = d.id;
+                    titleEl.value = d.title;
+                    dateEl.value = d.date;
+                } else {
+                    document.getElementById('dday-modal-title').innerText = 'Add D-Day';
+                    idEl.value = '';
+                    titleEl.value = '';
+                    const tomorrow = new Date();
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    dateEl.value = dateKey(tomorrow);
+                }
+                openModal('dday-modal');
+            }
+
+            function saveDDay() {
+                const id = document.getElementById('dday-id').value;
+                const title = document.getElementById('dday-title').value.trim().slice(0, 40);
+                const date = document.getElementById('dday-date').value;
+                const errEl = document.getElementById('dday-error');
+                errEl.innerText = '';
+                if (!title) {
+                    errEl.innerText = 'Please enter an event name.';
+                    return;
+                }
+                if (!isValidDateStr(date)) {
+                    errEl.innerText = 'Please pick a valid date.';
+                    return;
+                }
+                if (!id && dDays.length >= MAX_DDAYS) {
+                    errEl.innerText = 'Maximum ' + MAX_DDAYS + ' countdowns allowed.';
+                    return;
+                }
+                if (id) {
+                    const d = dDays.find( x => x.id === id );
+                    if (d) {
+                        d.title = title;
+                        d.date = date;
+                    }
+                } else {
+                    dDays.push({
+                        id: 'dd_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+                        title: title,
+                        date: date
+                    });
+                }
+                saveDDays();
+                closeModal('dday-modal');
+                renderDDays();
+                showToast(id ? 'Countdown updated' : 'Countdown added');
+            }
+
+            function deleteDDay(id) {
+                dDays = dDays.filter( d => d.id !== id );
+                saveDDays();
+                renderDDays();
+                showToast('Countdown removed');
+            }
+
+            // Reminders at D-3, D-1 and on the day itself, once per day each.
+            function checkDDayReminders() {
+                if (!userSettings.scheduleReminders)
+                    return;
+                const todayKeyStr = dateKey(new Date());
+                let notified = JSON.parse(localStorage.getItem(roomKey('pomoharbor_dday_notified'))) || [];
+                let changed = false;
+                normalizeDDays(dDays).forEach( d => {
+                    const dr = dDaysUntil(d.date);
+                    if (dr !== 0 && dr !== 1 && dr !== 3)
+                        return;
+                    const key = d.id + '_' + d.date + '_d' + dr + '_' + todayKeyStr;
+                    if (notified.includes(key))
+                        return;
+                    notified.push(key);
+                    changed = true;
+                    const body = d.title + ' - ' + (dr === 0 ? 'today! All the best 💪' : dr === 1 ? 'tomorrow. Get some rest 🌙' : 'in ' + dr + ' days ⏳');
+                    addAppNotification('⏰ D-Day reminder', body, 'schedule');
+                    triggerDesktopNotification('⏰ D-Day reminder', body);
+                }
+                );
+                if (changed) {
+                    if (notified.length > 60)
+                        notified = notified.slice(notified.length - 60);
+                    localStorage.setItem(roomKey('pomoharbor_dday_notified'), JSON.stringify(notified));
+                }
+            }
+
+            // The 60s heartbeat: schedule reminders + D-Day reminders +
+            // goal-hit toast + keeping the insights / D-Day labels fresh.
+            function runPeriodicChecks() {
+                try {
+                    checkScheduleReminders();
+                } catch (e) {
+                    console.warn('schedule reminders check failed', e);
+                }
+                try {
+                    checkDDayReminders();
+                    checkDailyGoalHit();
+                    if (currentTab === 'journal')
+                        renderInsights();
+                    if (currentTab === 'schedule')
+                        renderDDays();
+                    if (currentTab === 'study')
+                        renderStudy();
+                } catch (e) {
+                    console.warn('periodic checks failed', e);
+                }
             }
 
             // --- Friends ---
@@ -9811,6 +10705,14 @@
             // Always runs, regardless of whether Cloud Sync above succeeded.
             loadSchedule();
             startScheduleReminderLoop();
+            // Run the reminder pass once immediately so a D-0 / D-1 / goal
+            // hit is not delayed by up to a minute after a reload.
+            try {
+                checkDDayReminders();
+                checkDailyGoalHit();
+            } catch (e) {
+                console.warn('startup reminder checks failed', e);
+            }
             render();
             updateMobileNavActiveState(currentTab);
             renderMobileTimersSegment();
