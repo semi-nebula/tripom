@@ -1721,6 +1721,11 @@
                     </div>
                 </div>
                 <p id="vit-version-line" class="text-[10px] text-muted-custom mb-3 min-h-[1rem]"></p>
+                <div class="mb-1">
+                    <label class="block text-[10px] font-bold text-muted-custom uppercase tracking-wider mb-1">Roll number <span class="normal-case font-semibold">(optional — for German detection)</span></label>
+                    <input id="vit-roll" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="e.g. 321" oninput="onVitRollInput()" class="w-full custom-nav border rounded-xl px-3 py-2 text-xs outline-none text-white">
+                </div>
+                <p id="vit-roll-line" class="text-[10px] mb-3 min-h-[1rem]"></p>
                 <div id="vit-preview" class="hidden mb-3 custom-nav border rounded-2xl p-3">
                     <div id="vit-preview-summary" class="text-[11px] font-bold mb-2"></div>
                     <div id="vit-preview-list" class="space-y-1 max-h-44 overflow-y-auto text-[11px]"></div>
@@ -1744,7 +1749,7 @@
                     <button id="vit-import-btn" onclick="confirmVitImport()" class="hidden px-4 py-2 custom-btn text-[11px] rounded-xl font-bold">Import</button>
                 </div>
                 <p id="vit-error" class="text-[11px] text-red-400 mt-3 text-center font-semibold min-h-[1rem]"></p>
-                <p class="text-[10px] text-muted-custom mt-1 text-center leading-relaxed">Timetable data: <a class="underline hover:text-white" href="https://vedantbhat28.github.io/vit-timetable/" target="_blank" rel="noopener">VIT Pune FY Timetable</a> (public data, FY 2026–27).<br>Imported slots are saved to your room and sync to your devices.</p>
+                <p class="text-[10px] text-muted-custom mt-1 text-center leading-relaxed">Timetable data: <a class="underline hover:text-white" href="https://vedantbhat28.github.io/vit-timetable/" target="_blank" rel="noopener">VIT Pune FY Timetable</a> (public data, FY 2026–27). Roll numbers never leave this device.<br>Imported slots stay live-synced with the source and sync to your devices.</p>
             </div>
         </div>
         <!-- CUSTOM BACKGROUND MODAL -->
@@ -6877,15 +6882,18 @@
             }
 
             // --- VIT Timetable Import ------------------------------------
-            // One-tap importer for VIT Pune FY class timetables.
+            // One-tap importer for VIT Pune FY class timetables, with
+            // roll-number based German detection and live sync.
             // Data source: the public, read-only Supabase tables behind the
             // VIT Pune FY Timetable site (same public anon key that site
             // embeds in its own HTML - it can only SELECT the timetable
-            // tables). We ONLY fetch when the user opens this importer and
-            // picks a class - never polled, never background-synced.
-            // Imported slots are stored as ordinary PomoHarbor schedule
-            // slots (tagged source:'vit') so reminders, timers and
-            // cloud-sync keep working exactly as if entered by hand.
+            // tables). Network use is minimal: one small fetch when the user
+            // previews/imports, plus one tiny version check per hour (only
+            // when this room has a VIT import) to stay live-synced.
+            // Imported slots are ordinary PomoHarbor schedule slots (tagged
+            // source:'vit') so reminders, timers and cloud-sync work as usual.
+            // Roll numbers are checked on-device against the German list and
+            // never sent anywhere.
             const VIT_SUPA_URL = 'https://fqfzygubyjqkimsphmdn.supabase.co';
             const VIT_SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZxZnp5Z3VieWpxa2ltc3BobWRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk4NzQwMDYsImV4cCI6MjEwNTQ1MDAwNn0.k0T2HEH8cJlrQvxHWU4lcImLgtcXKGTAaowKyNDg1gI';
             const VIT_BRANCH_LABELS = {
@@ -6894,8 +6902,13 @@
                 ME: 'Mechanical', ET: 'EnTC'
             };
             const VIT_COLORS = ['indigo', 'emerald', 'amber', 'rose', 'sky', 'violet'];
+            // Foreign-language (German) roll lists + weekly German slots, same
+            // data the VIT timetable site checks on-device. GER_SLOTS maps
+            // language-division -> [weekday Mon=1..Sun=7, startMin, endMin, room].
+            const VIT_GER_ROLLS = {"AIDS":{"B":{"D8":[201,203,207,213,215,224,227,233,234,235,251,253,254,261]},"E":{"D9":[504,506,511,517,520,523,537,559]},"C":{"D10":[315,321,327,333,341,343,347,358,359,361,364,366]},"A":{"D11":[106,111,112,122,135,142,145,146,148,164,168]},"F":{"D11":[604,605,628,629,630,631,636,638,664,666]},"D":{"D14":[409,410,421,440,441,443,447,459,464]}},"CSCBI":{"B":{"D8":[208,212,226,227,230,232,235,242,256,265]},"C":{"D8":[301,302,321,329,341,348,354]},"A":{"D11":[104,105,106,116,119,124,126,127,128,130,134,135,145,152,155,160]}},"ET":{"A":{"D8":[104,105,108,120,123,126,127,135,136,142,150,151,152,155,160,162,163,165]},"B":{"D9":[203,204,206,209,212,216,221,224,226,232,235,236,240,244,246,248,249,253,267]},"C":{"D9":[301,303,304,305,308,314,332,335,336,339,345,346,347,352,362,366]},"D":{"D9":[416,419,423,432,434,445,447,448,451,455,457,464,468]},"E":{"D10":[505,518,521,530,537,546,551,558,562,565,568]},"F":{"D10":[601,603,608,609,611,621,627,630,633,634,635,637,642,649,650,651,652,657,665,666,667]}},"CSSE":{"C":{"D8":[312,321,322,324,333,335,340,342,351,352,354,363]},"A":{"D12":[104,105,115,120,121,133,136,137,138,144,152,155,157]},"B":{"D12":[202,208,209,212,215,224,230,231,240,251,253,259,264,265,266]}},"CV":{"A":{"D9":[122,126,129,131,154,161,162,163,166]},"B":{"D9":[211,219,236,237,241,265]}},"IC":{"C":{"D10":[308,310,313,321,326,327,332,335,337,338,343,349,364]},"B":{"D12":[213,214,218,224,228,232,233,236,245,247]},"A":{"D14":[105,115,130,133,137,143,151,152,160,161,163]}},"ME":{"F":{"D10":[603,604,605,608,609,611,613,614,622,626,629,635,640,643,646,658,660,662]},"B":{"D12":[206,207,215,217,218,221,223,228,229,230,232,237,248,250,255,257,258,262,263,264,266,267,269,270]},"A":{"D13":[102,104,106,116,125,127,135,136,137,139,142,144,150,154,155,159,161,170]},"C":{"D13":[302,304,305,306,308,309,310,323,324,326,337,338,340,344,346,349,350,351,354,355,357,364,368,369,370]},"D":{"D14":[414,415,416,422,424,428,437,439,441,444,452,457,465,467,469]},"E":{"D14":[501,502,503,506,507,509,513,514,517,518,523,526,527,530,543,552,553,560,561]}},"CSDS":{"A":{"D11":[26,63,103,104,115,119,122,129,130,136,146,161,168]},"B":{"D11":[201,207,209,217,222,225,238,240,242,248,250,252]},"C":{"D13":[303,306,309,314,324,333,340,344,350,352,353,354,359]}}};
+            const VIT_GER_SLOTS = {'D8': [2, 480, 600, 'E312'], 'D9': [3, 480, 600, 'E215'], 'D10': [4, 480, 600, 'E303'], 'D11': [2, 960, 1080, 'E305'], 'D12': [3, 960, 1080, 'E304'], 'D13': [4, 960, 1080, 'E305'], 'D14': [5, 960, 1080, 'E312']};
             let vitDivisionsCache = null;
-            let vitImport = { branch: '', slug: '', divLabel: '', batch: 'B1', version: '', effFrom: '', effTo: '', slots: [] };
+            let vitImport = { branch: '', slug: '', divLabel: '', divKey: '', batch: 'B1', roll: '', german: null, version: '', effFrom: '', effTo: '', rows: null, rowsSlug: '', slots: [] };
             let vitPreviewToken = 0;
 
             function vitBranchLabel(code) {
@@ -6913,6 +6926,29 @@
             function vitTimeMin(t) {
                 const m = /^(\d{1,2}):(\d{2})/.exec(String(t || ''));
                 return m ? (+m[1]) * 60 + (+m[2]) : NaN;
+            }
+
+            function vitFmtMin(m) {
+                return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+            }
+
+            // Roll-number -> German language-division (e.g. 'D10'), or null.
+            // Runs fully on-device; the roll number is never transmitted.
+            function vitGermanFor(branch, divKey, roll) {
+                const b = VIT_GER_ROLLS[branch];
+                const d = b && b[divKey];
+                const n = parseInt(roll, 10);
+                if (!d || !n)
+                    return null;
+                for (const k in d) {
+                    if (d[k].indexOf(n) > -1)
+                        return k;
+                }
+                return null;
+            }
+
+            function vitIsEnglish(code, name) {
+                return code === 'ES26108A' || /english/i.test(String(name || ''));
             }
 
             function vitFetch(path) {
@@ -6948,8 +6984,16 @@
                     vitImport.branch = saved.branch || '';
                     vitImport.slug = saved.slug || '';
                     vitImport.divLabel = saved.divLabel || '';
+                    vitImport.divKey = saved.divKey || '';
                     vitImport.batch = saved.batch || 'B1';
+                    vitImport.roll = saved.roll || '';
+                    if (saved.notify === false)
+                        document.getElementById('vit-notify').checked = false;
+                    else
+                        document.getElementById('vit-notify').checked = true;
                 }
+                document.getElementById('vit-roll').value = vitImport.roll;
+                refreshVitRollLine();
                 paintVitBatchChips();
                 updateVitLastImportLine();
                 openModal('vit-import-modal');
@@ -6968,9 +7012,12 @@
                     } else {
                         vitImport.branch = '';
                         vitImport.slug = '';
+                        vitImport.divLabel = '';
+                        vitImport.divKey = '';
                         divEl.innerHTML = '<option value="">Select branch first</option>';
                         document.getElementById('vit-version-line').innerText = '';
                     }
+                    refreshVitRollLine();
                     autoVitPreview();
                 };
                 if (vitDivisionsCache) {
@@ -6991,6 +7038,7 @@
                 vitImport.branch = document.getElementById('vit-branch').value;
                 vitImport.slug = '';
                 paintVitDivisions();
+                refreshVitRollLine();
                 autoVitPreview();
             }
 
@@ -7007,6 +7055,7 @@
                 } else {
                     vitImport.slug = '';
                     vitImport.divLabel = '';
+                    vitImport.divKey = '';
                     document.getElementById('vit-version-line').innerText = '';
                 }
             }
@@ -7014,16 +7063,50 @@
             function onVitDivChange() {
                 vitImport.slug = document.getElementById('vit-div').value;
                 refreshVitVersionLine();
+                refreshVitRollLine();
                 autoVitPreview();
             }
 
             function refreshVitVersionLine() {
                 const row = (vitDivisionsCache || []).find(r => r.slug === vitImport.slug);
                 vitImport.divLabel = row ? String(row.division).replace(/^FY\s+/, '') : '';
+                vitImport.divKey = vitImport.divLabel ? vitImport.divLabel.split('-').pop().trim() : '';
                 vitImport.version = row ? (row.version || '') : '';
                 vitImport.effFrom = row ? (row.effective_from || '') : '';
                 vitImport.effTo = row ? (row.effective_to || '') : '';
                 document.getElementById('vit-version-line').innerText = row ? `${vitImport.divLabel} · ${vitImport.version} · valid ${vitImport.effFrom} → ${vitImport.effTo}` : '';
+            }
+
+            let vitRollDebounce = null;
+            function onVitRollInput() {
+                vitImport.roll = document.getElementById('vit-roll').value.replace(/\D/g, '').slice(0, 6);
+                document.getElementById('vit-roll').value = vitImport.roll;
+                refreshVitRollLine();
+                clearTimeout(vitRollDebounce);
+                vitRollDebounce = setTimeout(autoVitPreview, 400);
+            }
+
+            function refreshVitRollLine() {
+                const line = document.getElementById('vit-roll-line');
+                vitImport.german = vitGermanFor(vitImport.branch, vitImport.divKey, vitImport.roll);
+                if (!vitImport.roll) {
+                    line.className = 'text-[10px] mb-3 min-h-[1rem] text-muted-custom';
+                    line.innerText = 'Stays on this device — only used to check the German list.';
+                    return;
+                }
+                if (!vitImport.branch || !vitImport.divKey) {
+                    line.className = 'text-[10px] mb-3 min-h-[1rem] text-muted-custom';
+                    line.innerText = 'Select your branch and division first.';
+                    return;
+                }
+                if (vitImport.german) {
+                    const g = VIT_GER_SLOTS[vitImport.german];
+                    line.className = 'text-[10px] mb-3 min-h-[1rem] text-emerald-400 font-semibold';
+                    line.innerText = `✔ Roll ${vitImport.roll}: German (${vitImport.german}) detected — German ${SCHEDULE_DAYS[g[0] - 1]} ${vitFmtMin(g[1])}–${vitFmtMin(g[2])} will be added, English kept with reminders off.`;
+                } else {
+                    line.className = 'text-[10px] mb-3 min-h-[1rem] text-muted-custom';
+                    line.innerText = `Roll ${vitImport.roll}: no foreign language — English kept as usual.`;
+                }
             }
 
             function setVitBatch(b) {
@@ -7054,6 +7137,20 @@
                 const errEl = document.getElementById('vit-error');
                 const prevBox = document.getElementById('vit-preview');
                 errEl.innerText = '';
+                // Rebuild from cached rows when only batch/roll changed - no refetch.
+                if (vitImport.rows && vitImport.rowsSlug === vitImport.slug) {
+                    vitImport.slots = vitRowsToSlots(vitImport.rows, vitImport.batch, vitImport.german);
+                    if (!vitImport.slots.length) {
+                        prevBox.classList.add('hidden');
+                        errEl.innerText = 'No classes found for this batch. Try another batch.';
+                        return;
+                    }
+                    paintVitPreview();
+                    const importBtn = document.getElementById('vit-import-btn');
+                    importBtn.innerText = `Import ${vitImport.slots.length} slots`;
+                    importBtn.classList.remove('hidden');
+                    return;
+                }
                 document.getElementById('vit-preview-summary').innerText = 'Fetching timetable…';
                 document.getElementById('vit-preview-list').innerHTML = '';
                 prevBox.classList.remove('hidden');
@@ -7061,7 +7158,9 @@
                 vitFetch('tt_sessions?division=eq.' + encodeURIComponent(vitImport.slug) + '&select=weekday,start_time,end_time,subject_code,subject_name,session_type,batch,room&order=weekday.asc,start_time.asc').then(rows => {
                     if (token !== vitPreviewToken)
                         return;
-                    vitImport.slots = vitRowsToSlots(rows || [], vitImport.batch);
+                    vitImport.rows = rows || [];
+                    vitImport.rowsSlug = vitImport.slug;
+                    vitImport.slots = vitRowsToSlots(vitImport.rows, vitImport.batch, vitImport.german);
                     if (!vitImport.slots.length) {
                         prevBox.classList.add('hidden');
                         errEl.innerText = 'No classes found for this batch. Try another batch.';
@@ -7081,8 +7180,10 @@
 
             // Raw session rows (one per hour) -> merged PomoHarbor slots.
             // Keeps theory (all batches) + only the student's lab/tutorial
-            // batch, then merges back-to-back hours of the same class.
-            function vitRowsToSlots(rows, batch) {
+            // batch, merges back-to-back hours of the same class, then adds
+            // the German slot (and soft-marks English) when a roll number
+            // matched the German list.
+            function vitRowsToSlots(rows, batch, german) {
                 const mine = rows.filter(r => !r.batch || r.batch === batch);
                 const byDay = {};
                 mine.forEach(r => {
@@ -7099,7 +7200,6 @@
                         room: String(r.room || '')
                     });
                 });
-                const fmt = (m) => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
                 const merged = [];
                 Object.keys(byDay).map(Number).sort((a, b) => a - b).forEach(w => {
                     const list = byDay[w].sort((a, b) => a.s - b.s);
@@ -7116,18 +7216,26 @@
                     if (cur)
                         merged.push(cur);
                 });
-                return merged.map(b => {
+                const out = merged.map(b => {
                     const tag = b.type === 'Lab' ? ' (Lab)' : b.type === 'Tutorial' ? ' (Tut)' : '';
                     const room = b.room ? ' · ' + b.room : '';
-                    return { day: b.day, start: fmt(b.s), end: fmt(b.e), title: b.name + tag + room, color: vitColorFor(b.code) };
+                    const eng = !!german && vitIsEnglish(b.code, b.name);
+                    return { day: b.day, start: vitFmtMin(b.s), end: vitFmtMin(b.e), title: (eng ? '⚠️ ' : '') + b.name + tag + room, color: vitColorFor(b.code), eng: eng };
                 });
+                if (german && VIT_GER_SLOTS[german]) {
+                    const g = VIT_GER_SLOTS[german];
+                    out.push({ day: SCHEDULE_DAYS[g[0] - 1], start: vitFmtMin(g[1]), end: vitFmtMin(g[2]), title: `German (Foreign Lang) · ${g[3]}`, color: 'amber', eng: false, ger: true });
+                    out.sort((a, b) => SCHEDULE_DAYS.indexOf(a.day) - SCHEDULE_DAYS.indexOf(b.day) || minutesFromTime(a.start) - minutesFromTime(b.start));
+                }
+                return out;
             }
 
             function paintVitPreview() {
                 const slots = vitImport.slots;
                 const days = SCHEDULE_DAYS.filter(d => slots.some(s => s.day === d));
                 const hrs = slots.reduce((t, s) => t + (minutesFromTime(s.end) - minutesFromTime(s.start)) / 60, 0);
-                document.getElementById('vit-preview-summary').innerText = `${vitImport.divLabel} · Batch ${vitImport.batch} → ${slots.length} slots · ${days.length} days · ~${Math.round(hrs)}h/week`;
+                const gerTxt = vitImport.german ? ` · German ${vitImport.german}` : '';
+                document.getElementById('vit-preview-summary').innerText = `${vitImport.divLabel} · Batch ${vitImport.batch}${gerTxt} → ${slots.length} slots · ${days.length} days · ~${Math.round(hrs)}h/week`;
                 document.getElementById('vit-preview-list').innerHTML = days.map(d => `<div class="mt-1"><div class="text-[10px] font-bold text-muted-custom uppercase tracking-wider">${d}</div>` + slots.filter(s => s.day === d).map(s => `<div class="flex items-center gap-2 py-0.5"><span class="mono text-muted-custom whitespace-nowrap">${formatTime12(minutesFromTime(s.start))}–${formatTime12(minutesFromTime(s.end))}</span><span class="truncate font-semibold">${escapeHtml(s.title)}</span></div>`).join('') + `</div>`).join('');
             }
 
@@ -7152,14 +7260,14 @@
                     return;
                 }
                 const stamp = Date.now().toString(36);
-                const fresh = slots.map((s, i) => ({ id: 'vit_' + stamp + '_' + i, day: s.day, start: s.start, end: s.end, title: s.title, color: s.color, notify: notify, timer: false, timerId: null, source: 'vit', vitSlug: vitImport.slug }));
+                const fresh = slots.map((s, i) => ({ id: 'vit_' + stamp + '_' + i, day: s.day, start: s.start, end: s.end, title: s.title, color: s.color, notify: notify && !s.eng, timer: false, timerId: null, source: 'vit', vitSlug: vitImport.slug, vitGer: !!s.ger }));
                 scheduleState.slots = base.concat(fresh);
-                setVitSavedChoice({ branch: vitImport.branch, divLabel: vitImport.divLabel, batch: vitImport.batch, slug: vitImport.slug, version: vitImport.version, importedAt: Date.now(), count: fresh.length });
+                setVitSavedChoice({ branch: vitImport.branch, divLabel: vitImport.divLabel, divKey: vitImport.divKey, batch: vitImport.batch, roll: vitImport.roll, german: vitImport.german, slug: vitImport.slug, version: vitImport.version, effFrom: vitImport.effFrom, effTo: vitImport.effTo, notify: notify, importedAt: Date.now(), lastSyncCheck: Date.now(), count: fresh.length });
                 saveSchedule();
                 renderSchedule();
                 updateVitLastImportLine();
                 closeModal('vit-import-modal');
-                showToast(`Imported ${fresh.length} VIT slots` + (removed ? ` (replaced ${removed} old)` : ''));
+                showToast(`Imported ${fresh.length} VIT slots` + (removed ? ` (replaced ${removed} old)` : '') + (vitImport.german ? ' · German added' : ''));
             }
 
             function clearVitImport() {
@@ -7180,12 +7288,81 @@
                 const rmBtn = document.getElementById('vit-remove-btn');
                 if (saved && saved.importedAt) {
                     const d = new Date(saved.importedAt);
-                    line.innerText = `Last import: ${saved.divLabel || ''} · Batch ${saved.batch || ''} · ${saved.count || n} slots · ${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                    const rollTxt = saved.roll ? ` · Roll ${saved.roll}${saved.german ? ' (German)' : ''}` : '';
+                    line.innerText = `Last import: ${saved.divLabel || ''} · Batch ${saved.batch || ''}${rollTxt} · ${saved.count || n} slots · ${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · Live sync on`;
                 } else {
                     line.innerText = n ? `${n} imported slots in this room.` : '';
                 }
                 if (rmBtn)
                     rmBtn.classList.toggle('hidden', !n);
+            }
+
+            // --- VIT live sync -------------------------------------------
+            // Keeps this room's imported slots in step with Vedant's live
+            // site: at most one tiny version check per hour (only when this
+            // room actually has a VIT import), then a silent refresh when
+            // his version/effective dates changed.
+            let vitSyncVisibilityHooked = false;
+            function queueVitLiveSync() {
+                const saved = getVitSavedChoice();
+                if (!saved || !saved.slug)
+                    return;
+                if (!vitSyncVisibilityHooked) {
+                    vitSyncVisibilityHooked = true;
+                    document.addEventListener('visibilitychange', () => {
+                        if (!document.hidden)
+                            queueVitLiveSync();
+                    });
+                }
+                if (saved.lastSyncCheck && (Date.now() - saved.lastSyncCheck) < 3600000)
+                    return;
+                setTimeout(vitLiveSyncNow, 8000);
+            }
+
+            function vitLiveSyncNow() {
+                const saved = getVitSavedChoice();
+                if (!saved || !saved.slug || !navigator.onLine)
+                    return;
+                vitFetch('tt_divisions?slug=eq.' + encodeURIComponent(saved.slug) + '&select=version,effective_from,effective_to').then(rows => {
+                    const row = (rows || [])[0];
+                    saved.lastSyncCheck = Date.now();
+                    if (!row) {
+                        setVitSavedChoice(saved);
+                        return;
+                    }
+                    const sig = r => [r.version, r.effective_from, r.effective_to].join('|');
+                    if (sig(row) === sig(saved)) {
+                        setVitSavedChoice(saved);
+                        return;
+                    }
+                    // His data changed -> silently refresh our imported slots.
+                    return vitFetch('tt_sessions?division=eq.' + encodeURIComponent(saved.slug) + '&select=weekday,start_time,end_time,subject_code,subject_name,session_type,batch,room&order=weekday.asc,start_time.asc').then(srows => {
+                        const fresh = getVitSavedChoice() || saved;
+                        const german = vitGermanFor(fresh.branch, fresh.divKey, fresh.roll);
+                        const slots = vitRowsToSlots(srows || [], fresh.batch || 'B1', german);
+                        const base = scheduleState.slots.filter(s => s.source !== 'vit');
+                        if (!slots.length || base.length + slots.length > MAX_SCHEDULE_SLOTS) {
+                            setVitSavedChoice(fresh);
+                            return;
+                        }
+                        const notify = fresh.notify !== false;
+                        const stamp = Date.now().toString(36);
+                        scheduleState.slots = base.concat(slots.map((s, i) => ({ id: 'vit_' + stamp + '_' + i, day: s.day, start: s.start, end: s.end, title: s.title, color: s.color, notify: notify && !s.eng, timer: false, timerId: null, source: 'vit', vitSlug: fresh.slug, vitGer: !!s.ger })));
+                        fresh.version = row.version;
+                        fresh.effFrom = row.effective_from;
+                        fresh.effTo = row.effective_to;
+                        fresh.german = german;
+                        fresh.importedAt = Date.now();
+                        fresh.lastSyncCheck = Date.now();
+                        fresh.count = slots.length;
+                        setVitSavedChoice(fresh);
+                        saveSchedule();
+                        renderSchedule();
+                        if (typeof updateVitLastImportLine === 'function' && document.getElementById('vit-last-import'))
+                            updateVitLastImportLine();
+                        showToast(`📅 VIT timetable updated to ${row.version || 'latest'} (${slots.length} slots)`);
+                    });
+                }).catch(() => {});
             }
 
             // --- Friends ---
@@ -10132,6 +10309,7 @@
             // Always runs, regardless of whether Cloud Sync above succeeded.
             loadSchedule();
             startScheduleReminderLoop();
+            queueVitLiveSync();
             render();
             updateMobileNavActiveState(currentTab);
             renderMobileTimersSegment();
