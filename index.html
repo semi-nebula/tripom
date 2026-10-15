@@ -1735,11 +1735,42 @@
                     </label>
                 </div>
                 <div class="flex gap-2 justify-end">
+                    <button onclick="closeModal('schedule-slot-modal'); openLiveReport(document.getElementById('schedule-slot-id').value || null)" class="px-4 py-2 custom-nav border text-[11px] rounded-xl font-bold text-muted-custom hover:text-white mr-auto">⚠️ Report</button>
                     <button id="schedule-slot-delete-btn" onclick="deleteScheduleSlot()" class="hidden px-4 py-2 bg-red-500/10 text-red-400 border border-red-500/30 text-[11px] rounded-xl font-bold hover:bg-red-500/20">Delete</button>
                     <button onclick="closeModal('schedule-slot-modal')" class="px-4 py-2 custom-nav border text-[11px] rounded-xl font-bold text-muted-custom hover:text-white">Cancel</button>
                     <button onclick="saveScheduleSlot()" class="px-4 py-2 custom-btn text-[11px] rounded-xl font-bold">Save</button>
                 </div>
                 <p id="schedule-slot-error" class="text-[11px] text-red-400 mt-3 text-center font-semibold min-h-[1rem]"></p>
+            </div>
+        </div>
+        <!-- LIVE REPORT MODAL -->
+        <div id="live-report-modal" onclick="closeModal('live-report-modal')" class="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+            <div onclick="event.stopPropagation()" class="custom-card rounded-3xl max-w-md w-full p-6 shadow-2xl border">
+                <h3 class="text-base font-bold accent-text mb-1">📢 Report class update</h3>
+                <p id="live-report-slot" class="text-[11px] font-semibold"></p>
+                <p id="live-report-scope" class="text-[10px] text-muted-custom mb-4"></p>
+                <div class="mb-3">
+                    <label class="block text-[10px] font-bold text-muted-custom uppercase tracking-wider mb-1">Type</label>
+                    <select id="live-report-type" class="w-full custom-nav border rounded-xl px-3 py-2 text-xs outline-none text-white">
+                        <option value="cancelled">Class cancelled</option>
+                        <option value="room">Room changed</option>
+                        <option value="substitute">Substitute teacher</option>
+                        <option value="note">Note for everyone</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="block text-[10px] font-bold text-muted-custom uppercase tracking-wider mb-1">Details</label>
+                    <input id="live-report-details" type="text" maxlength="140" placeholder="e.g. DBMS 2pm lecture cancelled today" class="w-full custom-nav border rounded-xl px-3 py-2 text-xs outline-none text-white">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-[10px] font-bold text-muted-custom uppercase tracking-wider mb-1">New room (if changed)</label>
+                    <input id="live-report-room" type="text" maxlength="24" placeholder="e.g. E304" class="w-full custom-nav border rounded-xl px-3 py-2 text-xs outline-none text-white">
+                </div>
+                <div class="flex gap-2 justify-end">
+                    <button onclick="closeModal('live-report-modal')" class="px-4 py-2 custom-nav border text-[11px] rounded-xl font-bold text-muted-custom hover:text-white">Cancel</button>
+                    <button onclick="submitLiveReport()" class="px-4 py-2 custom-btn text-[11px] rounded-xl font-bold">Share</button>
+                </div>
+                <p id="live-report-error" class="text-[11px] text-red-400 mt-3 text-center font-semibold min-h-[1rem]"></p>
             </div>
         </div>
         <!-- VIT IMPORT MODAL -->
@@ -2410,6 +2441,10 @@
                             <span>🎓</span>
                             <span class="hidden sm:inline">Import VIT</span>
                         </button>
+                        <button onclick="openLiveReport(null)" class="px-3 py-2 custom-nav border text-[11px] rounded-xl font-bold text-muted-custom hover:text-white flex items-center gap-1.5">
+                            <span>📢</span>
+                            <span class="hidden sm:inline">Report</span>
+                        </button>
                         <button onclick="document.getElementById('schedule-photo-input').click()" class="px-3 py-2 custom-nav border text-[11px] rounded-xl font-bold text-muted-custom hover:text-white flex items-center gap-1.5">
                             <span>🖼️</span>
                             <span class="hidden sm:inline">Photo</span>
@@ -2437,6 +2472,7 @@
                     </div>
                     <p class="text-[10px] text-muted-custom mt-2 text-center">Photo is saved only on this device.</p>
                 </div>
+                <div id="live-banner" class="mb-3 space-y-2"></div>
                 <div class="custom-card rounded-3xl p-4 sm:p-6 border">
                     <div id="schedule-day-tabs" class="flex items-center gap-1 overflow-x-auto no-scrollbar mb-4 pb-1"></div>
                     <div id="schedule-slots-list" class="space-y-2"></div>
@@ -6693,6 +6729,7 @@
                     emptyEl.classList.add('hidden');
                     const nowDay = getTodayScheduleDay();
                     const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
+                    const liveState = getLiveState();
                     listEl.innerHTML = slots.map(slot => {
                         const startMin = minutesFromTime(slot.start);
                         const endMin = minutesFromTime(slot.end);
@@ -6712,6 +6749,7 @@
                         const ring = isCurrent ? 'ring-2 ring-[var(--accent-primary)]' : '';
                         const notifyBadge = slot.notify ? '<span class="slot-badge">🔔</span>' : '';
                         const timerBadge = slot.timerId ? '<span class="slot-badge">⏱️</span>' : '';
+                        const liveBadge = liveState.cancelled.has(slot.id) ? '<span class="slot-badge" title="Reported cancelled">🚫</span>' : (liveState.rooms[slot.id] ? `<span class="slot-badge" title="Room changed">📍${escapeHtml(liveState.rooms[slot.id])}</span>` : '');
                         const startBtn = slot.timerId ? `<button onclick="event.stopPropagation(); startScheduleTimer('${slot.id}')" class="ml-2 px-3 py-1.5 custom-btn text-xs rounded-lg font-bold">Start</button>` : '';
                         const classBtn = slot.timerId ? '' : `<button onclick="event.stopPropagation(); startClassTimer('${slot.id}')" title="Start class timer" class="px-2.5 py-1.5 custom-btn text-xs rounded-lg font-bold">▶</button>`;
                         const attBtns = (scheduleSelectedDay === nowDay) ? attButtonsFor(slot) : '';
@@ -6721,13 +6759,14 @@
                                 <div class="slot-time font-bold mono whitespace-nowrap">${formatTime12(startMin)} – ${formatTime12(endMin)}</div>
                                 <div class="slot-title font-semibold truncate">${escapeHtml(slot.title || 'Untitled')}</div>
                             </div>
-                            <div class="flex items-center gap-2 shrink-0">${notifyBadge}${timerBadge}${attBtns}${startBtn}${classBtn}</div>
+                            <div class="flex items-center gap-2 shrink-0">${notifyBadge}${timerBadge}${liveBadge}${attBtns}${startBtn}${classBtn}</div>
                         </div>
                     `;
                     }
                     ).join('');
                 }
                 renderAttendance();
+                renderLiveBanner();
             }
 
             function selectScheduleDay(day) {
@@ -8260,6 +8299,7 @@
                 saveSchedule();
                 renderSchedule();
                 updateVitLastImportLine();
+                liveUpdatesRescope();
                 closeModal('vit-import-modal');
                 showToast(`Imported ${fresh.length} VIT slots` + (removed ? ` (replaced ${removed} old)` : '') + (vitImport.german ? ' · German added' : ''));
             }
@@ -8963,6 +9003,228 @@
                     const bar = q >= required ? 'bg-emerald-400/70' : q >= required - 10 ? 'bg-amber-400/70' : 'bg-red-400/70';
                     return `<div class="flex items-center gap-2 text-[11px]"><span class="font-semibold truncate flex-1">${escapeHtml(n)}</span><span class="text-muted-custom whitespace-nowrap">${p}/${t}</span><div class="w-16 h-1.5 rounded-full bg-white/10 overflow-hidden shrink-0"><div class="h-full ${bar} rounded-full" style="width:${q}%"></div></div><span class="font-bold ${c} w-9 text-right shrink-0">${q}%</span><span class="text-muted-custom truncate hidden sm:inline">${escapeHtml(bunkText(p, t, required))}</span></div>`;
                 }).join('');
+            }
+
+            // --- Crowdsourced live updates -------------------------------------
+            // Anyone can report a cancelled class, room change, substitute or
+            // note; others confirm with a vote. Reports live ~20h and are
+            // scoped per VIT division (or "general"), shared via Firebase so
+            // every student benefits - no admin required. If Firebase writes
+            // fail (rules/offline), reports fall back to this device only.
+            let liveReportsCache = [];
+            let liveScope = null;
+            let liveRef = null;
+            let liveReportSlotId = null;
+
+            function liveVoterKey() {
+                if (typeof authUser !== 'undefined' && authUser)
+                    return 'u_' + authUser.uid;
+                let d = null;
+                try {
+                    d = localStorage.getItem('pomoharbor_device_id');
+                    if (!d) {
+                        d = 'd_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+                        localStorage.setItem('pomoharbor_device_id', d);
+                    }
+                } catch (e) {
+                    d = 'd_anon';
+                }
+                return d;
+            }
+
+            function liveCurrentScope() {
+                try {
+                    const saved = getVitSavedChoice ? getVitSavedChoice() : null;
+                    if (saved && saved.slug)
+                        return String(saved.slug).replace(/[.#$/\[\]]/g, '_');
+                } catch (e) {}
+                return 'general';
+            }
+
+            function liveUpdatesRescope() {
+                const scope = liveCurrentScope();
+                if (scope === liveScope)
+                    return;
+                try {
+                    if (liveRef)
+                        liveRef.off();
+                } catch (e) {}
+                liveScope = scope;
+                liveRef = null;
+                liveReportsCache = liveLocalReports();
+                try {
+                    if (typeof firebase === 'undefined' || !firebase.database)
+                        return;
+                    liveRef = firebase.database().ref('live_updates/' + scope);
+                    liveRef.on('value', snap => {
+                        const val = snap.val() || {};
+                        const now = Date.now();
+                        liveReportsCache = Object.keys(val).map(k => Object.assign({ id: k }, val[k])).filter(r => r && r.expiresAt > now);
+                        if (currentTab === 'schedule')
+                            renderSchedule();
+                    }, () => {});
+                } catch (e) {}
+            }
+
+            function liveLocalReports() {
+                try {
+                    const arr = JSON.parse(localStorage.getItem(roomKey('pomoharbor_live_local')) || '[]');
+                    const now = Date.now();
+                    return (Array.isArray(arr) ? arr : []).filter(r => r && r.expiresAt > now);
+                } catch (e) {
+                    return [];
+                }
+            }
+
+            function liveSaveLocal(report) {
+                const arr = liveLocalReports();
+                arr.push(report);
+                try {
+                    localStorage.setItem(roomKey('pomoharbor_live_local'), JSON.stringify(arr.slice(-30)));
+                } catch (e) {}
+                liveReportsCache = liveLocalReports();
+            }
+
+            function liveVotes(r) {
+                return r && r.votes ? Object.keys(r.votes).length : 0;
+            }
+
+            function getLiveState() {
+                const cancelled = new Set();
+                const rooms = {};
+                const today = attendanceTodayStr();
+                if (scheduleSelectedDay !== getTodayScheduleDay())
+                    return { cancelled, rooms, reports: [] };
+                const now = Date.now();
+                const reports = liveReportsCache.filter(r => r && r.expiresAt > now && (!r.date || r.date === today));
+                reports.sort((a, b) => liveVotes(b) - liveVotes(a) || (b.createdAt || 0) - (a.createdAt || 0));
+                reports.forEach(r => {
+                    if (r.type === 'cancelled' && r.slotId)
+                        cancelled.add(r.slotId);
+                    if (r.type === 'room' && r.slotId && r.room)
+                        rooms[r.slotId] = r.room;
+                });
+                return { cancelled, rooms, reports };
+            }
+
+            function liveTypeIcon(t) {
+                return t === 'cancelled' ? '🚫' : t === 'room' ? '📍' : t === 'substitute' ? '👥' : '📢';
+            }
+
+            function liveTypeLabel(t) {
+                return t === 'cancelled' ? 'Cancelled' : t === 'room' ? 'Room changed' : t === 'substitute' ? 'Substitute' : 'Note';
+            }
+
+            function renderLiveBanner() {
+                const box = document.getElementById('live-banner');
+                if (!box)
+                    return;
+                const { reports } = getLiveState();
+                if (!reports.length) {
+                    box.innerHTML = '';
+                    return;
+                }
+                const me = liveVoterKey();
+                box.innerHTML = reports.map(r => {
+                    const n = liveVotes(r);
+                    const mine = r.votes && r.votes[me];
+                    const badge = n >= 2 ? '<span class="text-[9px] font-bold text-emerald-400 border border-emerald-500/40 bg-emerald-500/10 rounded-md px-1.5 py-0.5 ml-1">✔ confirmed</span>' : '<span class="text-[9px] font-bold text-amber-400 border border-amber-500/40 bg-amber-500/10 rounded-md px-1.5 py-0.5 ml-1">unconfirmed</span>';
+                    const slotLine = r.slotTitle ? `<div class="font-bold">${escapeHtml(r.slotTitle)}</div>` : '';
+                    return `<div class="custom-card rounded-2xl p-3 border text-[11px]">
+                        <div class="flex items-center gap-1.5 mb-1"><span>${liveTypeIcon(r.type)}</span><span class="font-bold">${liveTypeLabel(r.type)}</span>${badge}</div>
+                        ${slotLine}
+                        <div class="text-muted-custom">${escapeHtml(r.body || '')}</div>
+                        <div class="flex items-center justify-between mt-2">
+                            <span class="text-[10px] text-muted-custom">by ${escapeHtml(r.by || 'a student')}</span>
+                            <button onclick="voteLiveUpdate('${r.id}')" class="px-2.5 py-1 rounded-lg text-[10px] font-bold ${mine ? 'custom-btn' : 'custom-nav border text-muted-custom hover:text-white'}">✔ Confirm (${n})</button>
+                        </div>
+                    </div>`;
+                }).join('');
+            }
+
+            function openLiveReport(slotId) {
+                liveReportSlotId = slotId || null;
+                const slot = slotId ? scheduleState.slots.find(s => s.id === slotId) : null;
+                document.getElementById('live-report-slot').innerText = slot ? `${slot.day} ${slot.start}–${slot.end} · ${slot.title}` : 'General (whole division)';
+                document.getElementById('live-report-scope').innerText = 'Visible to ' + (liveScope === 'general' ? 'everyone (general board)' : 'division ' + liveScope) + ' for ~20h';
+                document.getElementById('live-report-details').value = '';
+                document.getElementById('live-report-room').value = '';
+                document.getElementById('live-report-type').value = slot ? 'cancelled' : 'note';
+                document.getElementById('live-report-error').innerText = '';
+                openModal('live-report-modal');
+            }
+
+            async function submitLiveReport() {
+                const errEl = document.getElementById('live-report-error');
+                errEl.innerText = '';
+                const type = document.getElementById('live-report-type').value;
+                const details = document.getElementById('live-report-details').value.trim().slice(0, 140);
+                const room = document.getElementById('live-report-room').value.trim().slice(0, 24);
+                if (!details && type !== 'cancelled') {
+                    errEl.innerText = 'Add a few details.';
+                    return;
+                }
+                if (type === 'room' && !room) {
+                    errEl.innerText = 'Enter the new room.';
+                    return;
+                }
+                const slot = liveReportSlotId ? scheduleState.slots.find(s => s.id === liveReportSlotId) : null;
+                let by = 'a student';
+                try {
+                    if (typeof userProfile !== 'undefined' && userProfile)
+                        by = userProfile.name || userProfile.username || by;
+                } catch (e) {}
+                const now = Date.now();
+                const report = { type, body: details || (type === 'cancelled' ? 'Class is cancelled today.' : ''), room: room || '', slotId: slot ? slot.id : '', slotDay: slot ? slot.day : '', slotTitle: slot ? slot.title : '', date: attendanceTodayStr(), by: String(by).slice(0, 40), votes: {}, createdAt: now, expiresAt: now + 20 * 3600 * 1000 };
+                report.votes[liveVoterKey()] = 1;
+                let shared = false;
+                try {
+                    if (liveRef) {
+                        const ref = liveRef.push();
+                        report.id = ref.key;
+                        await ref.set(report);
+                        shared = true;
+                    }
+                } catch (e) {}
+                if (!shared) {
+                    report.id = 'local_' + now.toString(36);
+                    liveSaveLocal(report);
+                }
+                closeModal('live-report-modal');
+                renderSchedule();
+                showToast(shared ? '📢 Report shared with your division' : '📢 Saved on this device (offline)');
+            }
+
+            async function voteLiveUpdate(id) {
+                const me = liveVoterKey();
+                const local = liveLocalReports().find(r => r.id === id);
+                if (local || !liveRef || String(id).startsWith('local_')) {
+                    const arr = liveLocalReports();
+                    const r = arr.find(x => x.id === id);
+                    if (r) {
+                        r.votes = r.votes || {};
+                        if (r.votes[me])
+                            delete r.votes[me];
+                        else
+                            r.votes[me] = 1;
+                        try {
+                            localStorage.setItem(roomKey('pomoharbor_live_local'), JSON.stringify(arr));
+                        } catch (e) {}
+                        liveReportsCache = liveLocalReports().concat(liveReportsCache.filter(x => String(x.id).indexOf('local_') !== 0));
+                        renderSchedule();
+                    }
+                    return;
+                }
+                try {
+                    const ref = liveRef.child(id).child('votes').child(me.replace(/[.#$/\[\]]/g, '_'));
+                    const snap = await ref.once('value');
+                    if (snap.exists())
+                        await ref.remove();
+                    else
+                        await ref.set(1);
+                } catch (e) {
+                    showToast('Vote failed — offline?');
+                }
             }
 
             // --- Friends ---
@@ -11923,6 +12185,7 @@
             }
             queueVitLiveSync();
             initNativeApp();
+            liveUpdatesRescope();
             render();
             updateMobileNavActiveState(currentTab);
             renderMobileTimersSegment();
