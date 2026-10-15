@@ -85,6 +85,18 @@
           "sizes": "192x192"
         }
       ]
+    },
+    {
+      "name": "Study",
+      "short_name": "Study",
+      "description": "One-tap subject tracking",
+      "url": "./#study",
+      "icons": [
+        {
+          "src": "./icons/pomo-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ]
 }
