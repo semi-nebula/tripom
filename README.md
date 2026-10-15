@@ -32,7 +32,7 @@ additionally publishes it as a GitHub Release.
 
 ### Build locally
 
-Requirements: Node 22+, JDK 17, Android SDK.
+Requirements: Node 22+, JDK 21, Android SDK.
 
 ```sh
 npm ci
