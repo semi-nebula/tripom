@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">PomoHarbor</string>
+    <string name="title_activity_main">PomoHarbor</string>
+    <string name="package_name">com.pomoharbor.app</string>
+    <string name="custom_url_scheme">com.pomoharbor.app</string>
+</resources>

@@ -1,0 +1,36 @@
+{
+  "name": "pomoharbor",
+  "version": "1.6.0",
+  "description": "PomoHarbor - Real-Time Multi-Timer, Pomodoro & Flowtunes Workspace (PWA + Android via Capacitor)",
+  "scripts": {
+    "copy-web": "node scripts/copy-web.js",
+    "cap:sync": "npm run copy-web && npx cap sync android",
+    "android:debug": "npm run cap:sync && cd android && ./gradlew assembleDebug",
+    "android:open": "npx cap open android"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/semi-nebula/tripom.git"
+  },
+  "keywords": [
+    "pomodoro",
+    "timer",
+    "capacitor",
+    "android"
+  ],
+  "author": "semi-nebula",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/browser": "^8.0.5",
+    "@capacitor/cli": "^8.5.3",
+    "@capacitor/core": "^8.5.3",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/local-notifications": "^8.3.1",
+    "@capacitor/status-bar": "^8.0.4"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  }
+}

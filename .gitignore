@@ -1,0 +1,22 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# Capacitor generated web bundle is committed on purpose (so Android
+# Studio builds work out of the box), so www/ is NOT ignored.
+
+# Android / Gradle generated outputs
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/*.iml
+android/app/*.iml
+android/.idea/
+**/build/
+captures/
+.externalNativeBuild/
+*.hprof
+*.keystore
+*.jks
+!debug.keystore

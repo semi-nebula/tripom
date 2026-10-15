@@ -3246,6 +3246,10 @@
             }
 
             function requestNotificationPerm() {
+                if (capIsNative()) {
+                    capRequestNativePerms();
+                    return;
+                }
                 if ("Notification"in window) {
                     Notification.requestPermission().then(permission => {
                         const btn = document.getElementById('notif-btn');
@@ -4041,6 +4045,10 @@
             }
 
             function triggerDesktopNotification(title, body) {
+                if (capIsNative()) {
+                    capShowImmediate(title, body || '', 'pomo-reminders');
+                    return;
+                }
                 if ("Notification"in window && Notification.permission === "granted") {
                     new Notification(title,{
                         body
@@ -4409,6 +4417,8 @@
                                 logSessionToJournal(timer.title, timer.category, timer.startTime, now);
                                 stateChanged = true;
                                 triggerAlarmSequence();
+                                capCancelTimerAlarm(timer.id);
+                                capNativeVibrate();
                                 triggerDesktopNotification("PomoHarbor", `${timer.title} finished! ⌛`);
                             }
                         }
@@ -4422,6 +4432,8 @@
 
                     if (totalElapsed >= currentTarget) {
                         playAlarmSound();
+                        capCancelPomoAlarm();
+                        capNativeVibrate();
                         pomodoroState.running = false;
                         pomodoroState.elapsed = 0;
 
@@ -4442,6 +4454,7 @@
                             pomodoroState.mode = 'work';
                         }
                         savePomo();
+                        capPomoStateChanged();
                         stateChanged = true;
                     }
                 }
@@ -4765,6 +4778,7 @@
                     pomodoroState.running = true;
                 }
                 savePomo();
+                capPomoStateChanged();
                 syncWorkerState();
                 render();
             }
@@ -4782,6 +4796,7 @@
                     }
                 }
                 savePomo();
+                capPomoStateChanged();
                 syncWorkerState();
                 render();
             }
@@ -4793,6 +4808,7 @@
                 pomodoroState.running = false;
                 pomodoroState.elapsed = 0;
                 savePomo();
+                capPomoStateChanged();
                 syncWorkerState();
                 render();
             }
@@ -4811,6 +4827,7 @@
                     pomodoroState.mode = 'work';
                 }
                 savePomo();
+                capPomoStateChanged();
                 syncWorkerState();
                 render();
             }
@@ -5131,6 +5148,7 @@
                     syncWorkerState();
                     updateSingleCard(id);
                     save();
+                    capTimerStateChanged();
                 }
             }
 
@@ -5179,6 +5197,7 @@
                     syncWorkerState();
                     updateSingleCard(id);
                     save();
+                    capTimerStateChanged();
                 }
             }
 
@@ -5590,6 +5609,7 @@
                 stopAlarmLoop();
                 syncWorkerState();
                 save();
+                capTimerStateChanged();
                 const cardEl = document.getElementById(`timer-card-${id}`);
                 const stillHasCards = visibleTimersForTab(currentTab).length > 0;
                 if (cardEl && stillHasCards) {
@@ -5719,10 +5739,12 @@
                     if (remote.timers && !pendingLocalPush) {
                         timers = remote.timers;
                         localStorage.setItem(roomKey('pomoharbor_v3_timers'), JSON.stringify(timers));
+                        capTimerStateChanged();
                     }
                     if (remote.pomodoroState) {
                         pomodoroState = remote.pomodoroState;
                         localStorage.setItem(roomKey('pomoharbor_pomo_state'), JSON.stringify(pomodoroState));
+                        capPomoStateChanged();
                     }
                     if (remote.userSettings) {
                         userSettings = remote.userSettings;
@@ -5760,6 +5782,7 @@
                         // renderSchedule() and the slot modal on this device.
                         scheduleState = normalizeScheduleState(remote.schedule);
                         localStorage.setItem(roomKey('pomoharbor_schedule'), JSON.stringify(scheduleState));
+                        capScheduleChanged();
                         if (currentTab === 'schedule')
                             renderSchedule();
                     }
@@ -5781,6 +5804,7 @@
                     if (Array.isArray(remote.dDays)) {
                         dDays = normalizeDDays(remote.dDays);
                         localStorage.setItem(roomKey('pomoharbor_ddays'), JSON.stringify(dDays));
+                        capScheduleChanged();
                         if (currentTab === 'schedule')
                             renderDDays();
                     }
@@ -6558,6 +6582,7 @@
             function saveSchedule() {
                 localStorage.setItem(roomKey('pomoharbor_schedule'), JSON.stringify(scheduleState));
                 pushStateToCloud();
+                capScheduleChanged();
             }
 
             function getSchedulePhoto() {
@@ -6976,6 +7001,7 @@
                     );
                 }
                 save();
+                capTimerStateChanged();
 
                 saveSchedule();
                 // Close FIRST, then re-render. If a re-render ever throws
@@ -7006,6 +7032,7 @@
                 }
                 scheduleState.slots = scheduleState.slots.filter(s => s.id !== id);
                 saveSchedule();
+                capTimerStateChanged();
                 // Close first, render second (and never let a render error eat
                 // the delete confirmation - see saveScheduleSlot).
                 closeModal('schedule-slot-modal');
@@ -7071,6 +7098,7 @@
                         const notifyId = `${slot.id}_${now.toDateString()}`;
                         if (!scheduleNotifiedIds.has(notifyId)) {
                             scheduleNotifiedIds.add(notifyId);
+                            capCancelSlotAlarm(slot);
                             const title = 'Up next: ' + (slot.title || 'Scheduled slot');
                             const body = slot.start + (slot.end ? ' - ' + slot.end : '');
                             addAppNotification(title, body, 'schedule');
@@ -7121,6 +7149,7 @@
                 timer.startTime = serverNow();
                 timer.finished = false;
                 save();
+                capTimerStateChanged();
                 syncWorkerState();
                 switchTab('timer');
                 render();
@@ -7645,6 +7674,7 @@
                 dDays = normalizeDDays(dDays);
                 localStorage.setItem(roomKey('pomoharbor_ddays'), JSON.stringify(dDays));
                 pushStateToCloud();
+                capScheduleChanged();
             }
 
             function isValidDateStr(dateStr) {
@@ -7789,6 +7819,7 @@
                     if (notified.includes(key))
                         return;
                     notified.push(key);
+                    capCancelDdayKey(key);
                     changed = true;
                     const body = d.title + ' - ' + (dr === 0 ? 'today! All the best 💪' : dr === 1 ? 'tomorrow. Get some rest 🌙' : 'in ' + dr + ' days ⏳');
                     addAppNotification('⏰ D-Day reminder', body, 'schedule');
@@ -8306,6 +8337,431 @@
                         showToast(`📅 VIT timetable updated to ${row.version || 'latest'} (${slots.length} slots)`);
                     });
                 }).catch(() => {});
+            }
+
+            // --- Capacitor native bridge (Android app) ------------------------
+            // Real OS notifications (class reminders, timer alarms, Pomodoro
+            // alerts, D-Day reminders) that fire even with the app closed,
+            // plus vibration, status-bar styling, back-button and
+            // external-link handling for the Android build.
+            //
+            // SYNC PARITY: the Android app runs this SAME file, so Firebase
+            // cloud sync, rooms, VIT live sync, journal, todos, etc. behave
+            // exactly like the website. This block only ADDS native
+            // capabilities - every function is a strict no-op when
+            // `window.Capacitor` is absent (i.e. on the website).
+            function capIsNative() {
+                try {
+                    return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+                } catch (e) {
+                    return false;
+                }
+            }
+
+            let capPluginsCache = null;
+            function capPlugins() {
+                if (capPluginsCache)
+                    return capPluginsCache;
+                capPluginsCache = {};
+                try {
+                    if (capIsNative() && window.Capacitor.Plugins)
+                        capPluginsCache = window.Capacitor.Plugins;
+                } catch (e) {}
+                return capPluginsCache;
+            }
+
+            const CAP_POMO_ID = 710000;
+            let capNotifGranted = false;
+            let capChannelsReady = false;
+
+            function capHash(str) {
+                const s = String(str);
+                let h = 0;
+                for (let i = 0; i < s.length; i++)
+                    h = (h * 31 + s.charCodeAt(i)) | 0;
+                return Math.abs(h);
+            }
+
+            // Stable per-device numeric ids (Android needs 32-bit ints).
+            function capIdFor(kind, key) {
+                const bases = { timer: 700000, dday: 720000 };
+                const base = bases[kind] || 730000;
+                try {
+                    const raw = JSON.parse(localStorage.getItem('pomoharbor_cap_ids') || '{"seq":0,"map":{}}');
+                    const mk = kind + ':' + key;
+                    if (raw.map[mk] == null) {
+                        raw.seq = (raw.seq || 0) + 1;
+                        raw.map[mk] = base + (raw.seq % 9000);
+                        try {
+                            localStorage.setItem('pomoharbor_cap_ids', JSON.stringify(raw));
+                        } catch (e) {}
+                    }
+                    return raw.map[mk];
+                } catch (e) {
+                    return base + (capHash(kind + ':' + key) % 9000);
+                }
+            }
+
+            function capSchedId(slotId, dateStr) {
+                return 100000 + (capHash(slotId + '|' + dateStr) % 400000);
+            }
+
+            function capGetIdList(key) {
+                try {
+                    const v = JSON.parse(localStorage.getItem(key) || '[]');
+                    return Array.isArray(v) ? v : [];
+                } catch (e) {
+                    return [];
+                }
+            }
+
+            function capSetIdList(key, arr) {
+                try {
+                    localStorage.setItem(key, JSON.stringify(arr.slice(-400)));
+                } catch (e) {}
+            }
+
+            async function capCancelIds(ids) {
+                if (!capIsNative() || !ids || !ids.length)
+                    return;
+                try {
+                    const capP = capPlugins();
+                    if (capP.LocalNotifications)
+                        await capP.LocalNotifications.cancel({ notifications: ids.map(id => ({ id })) });
+                } catch (e) {}
+            }
+
+            async function capEnsureChannels() {
+                if (!capIsNative() || capChannelsReady)
+                    return;
+                try {
+                    const capP = capPlugins();
+                    if (!capP.LocalNotifications)
+                        return;
+                    await capP.LocalNotifications.createChannel({ id: 'pomo-alarms', name: 'Timer alarms', description: 'Countdown and Pomodoro finish alerts', importance: 5, vibration: true, lights: true, lightColor: '#8B7CF6' });
+                    await capP.LocalNotifications.createChannel({ id: 'pomo-reminders', name: 'Class & schedule reminders', description: 'Class start, D-Day and app reminders', importance: 4, vibration: true });
+                    capChannelsReady = true;
+                } catch (e) {}
+            }
+
+            async function capRefreshNotifState() {
+                if (!capIsNative())
+                    return false;
+                try {
+                    const capP = capPlugins();
+                    if (!capP.LocalNotifications)
+                        return false;
+                    const st = await capP.LocalNotifications.checkPermissions();
+                    capNotifGranted = st && st.display === 'granted';
+                    return capNotifGranted;
+                } catch (e) {
+                    return false;
+                }
+            }
+
+            // Full-permission flow, wired to the website's "Enable" button.
+            async function capRequestNativePerms() {
+                if (!capIsNative())
+                    return;
+                try {
+                    const capP = capPlugins();
+                    if (capP.LocalNotifications) {
+                        await capEnsureChannels();
+                        const st = await capP.LocalNotifications.requestPermissions();
+                        capNotifGranted = st && st.display === 'granted';
+                        // Exact alarms (Android 12+) keep class/timer alerts
+                        // firing at the exact minute even in Doze.
+                        try {
+                            if (capP.LocalNotifications.checkExactNotificationSetting) {
+                                const ex = await capP.LocalNotifications.checkExactNotificationSetting();
+                                const val = ex && (ex.exact_alarm || ex.exactAlarm || ex.value);
+                                if (val !== 'granted') {
+                                    showToast('For exact-time alarms, allow "Alarms & reminders" on the next screen');
+                                    if (capP.LocalNotifications.changeExactNotificationSetting)
+                                        await capP.LocalNotifications.changeExactNotificationSetting();
+                                }
+                            }
+                        } catch (e) {}
+                    }
+                } catch (e) {}
+                const btn = document.getElementById('notif-btn');
+                if (btn)
+                    btn.innerText = capNotifGranted ? 'Enabled ✓' : 'Enable';
+                const permBtn = document.getElementById('notif-perm-btn');
+                if (permBtn && capNotifGranted) {
+                    permBtn.innerText = 'Push enabled ✓';
+                    permBtn.disabled = true;
+                }
+                if (capNotifGranted)
+                    capReconcileAllSoon();
+                else
+                    showToast('Notifications not granted');
+            }
+
+            function capYmd(d) {
+                return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+            }
+
+            // --- Schedule + D-Day native alarms (next 7 days) ----------------
+            async function capReconcileSchedule() {
+                if (!capIsNative() || !capNotifGranted)
+                    return;
+                const capP = capPlugins();
+                if (!capP.LocalNotifications)
+                    return;
+                await capEnsureChannels();
+                await capCancelIds(capGetIdList('pomoharbor_cap_sched').concat(capGetIdList('pomoharbor_cap_dday')));
+                capSetIdList('pomoharbor_cap_sched', []);
+                capSetIdList('pomoharbor_cap_dday', []);
+                try {
+                    const now = Date.now();
+                    const schedIds = [];
+                    const ddayIds = [];
+                    const notes = [];
+                    // Class slots at their exact start (same rule as the site).
+                    if (userSettings.scheduleReminders !== false && scheduleState.remindersEnabled !== false) {
+                        const map = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                        for (let d = 0; d < 7; d++) {
+                            const day = new Date();
+                            day.setDate(day.getDate() + d);
+                            day.setHours(0, 0, 0, 0);
+                            const dayName = map[day.getDay()];
+                            const ds = capYmd(day);
+                            scheduleState.slots.forEach(slot => {
+                                if (!slot || slot.day !== dayName || !slot.notify)
+                                    return;
+                                const at = new Date(day.getTime() + minutesFromTime(slot.start) * 60000);
+                                if (at.getTime() <= now + 20000)
+                                    return;
+                                const id = capSchedId(slot.id, ds);
+                                schedIds.push(id);
+                                notes.push({ id, title: 'Up next: ' + (slot.title || 'Scheduled slot'), body: slot.start + (slot.end ? ' - ' + slot.end : ''), schedule: { at, allowWhileIdle: true }, channelId: 'pomo-reminders', extra: { kind: 'slot', slotId: slot.id } });
+                            });
+                        }
+                    }
+                    // D-Day D-0/D-1/D-3 at 8am, coordinated with the site's
+                    // notified list so open-app + closed-app never double-fire.
+                    if (userSettings.scheduleReminders !== false && typeof normalizeDDays === 'function') {
+                        let notified = [];
+                        try {
+                            notified = JSON.parse(localStorage.getItem(roomKey('pomoharbor_dday_notified'))) || [];
+                        } catch (e) {}
+                        normalizeDDays(typeof dDays !== 'undefined' ? dDays : []).forEach(dd => {
+                            [0, 1, 3].forEach(lead => {
+                                const fire = new Date();
+                                fire.setDate(fire.getDate() + (dDaysUntil(dd.date) - lead));
+                                fire.setHours(8, 0, 0, 0);
+                                if (fire.getTime() <= now + 20000)
+                                    return;
+                                const key = dd.id + '_' + dd.date + '_d' + lead + '_' + dateKey(fire);
+                                if (notified.indexOf(key) > -1)
+                                    return;
+                                const id = capIdFor('dday', key);
+                                ddayIds.push(id);
+                                notes.push({ id, title: '⏰ D-Day reminder', body: dd.title + ' - ' + (lead === 0 ? 'today! All the best 💪' : lead === 1 ? 'tomorrow. Get some rest 🌙' : 'in ' + lead + ' days ⏳'), schedule: { at: fire, allowWhileIdle: true }, channelId: 'pomo-reminders', extra: { kind: 'dday', key } });
+                            });
+                        });
+                    }
+                    if (notes.length) {
+                        await capP.LocalNotifications.schedule({ notifications: notes.slice(0, 120) });
+                        capSetIdList('pomoharbor_cap_sched', schedIds);
+                        capSetIdList('pomoharbor_cap_dday', ddayIds);
+                    }
+                } catch (e) {}
+            }
+
+            // --- Countdown timer finish alarms -------------------------------
+            async function capReconcileTimers() {
+                if (!capIsNative() || !capNotifGranted)
+                    return;
+                const capP = capPlugins();
+                if (!capP.LocalNotifications)
+                    return;
+                await capEnsureChannels();
+                await capCancelIds(capGetIdList('pomoharbor_cap_timers'));
+                const ids = [];
+                const notes = [];
+                try {
+                    const now = serverNow();
+                    timers.forEach(t => {
+                        if (!t || t.type !== 'timer' || !t.running || t.finished)
+                            return;
+                        const remaining = t.durationMs - (t.elapsed + (now - t.startTime));
+                        if (!(remaining > 2500))
+                            return;
+                        const id = capIdFor('timer', t.id);
+                        ids.push(id);
+                        notes.push({ id, title: 'PomoHarbor', body: (t.title || 'Timer') + ' finished! ⌛', schedule: { at: new Date(Date.now() + remaining), allowWhileIdle: true }, channelId: 'pomo-alarms', extra: { kind: 'timer', timerId: t.id } });
+                    });
+                    if (notes.length)
+                        await capP.LocalNotifications.schedule({ notifications: notes });
+                    capSetIdList('pomoharbor_cap_timers', ids);
+                } catch (e) {}
+            }
+
+            // --- Pomodoro phase-end alarm ------------------------------------
+            async function capReconcilePomo() {
+                if (!capIsNative())
+                    return;
+                await capCancelIds([CAP_POMO_ID]);
+                if (!capNotifGranted)
+                    return;
+                const capP = capPlugins();
+                if (!capP.LocalNotifications)
+                    return;
+                await capEnsureChannels();
+                try {
+                    if (!pomodoroState.running)
+                        return;
+                    const target = pomodoroState.mode === 'work' ? pomodoroState.workTime : (pomodoroState.mode === 'shortBreak' ? pomodoroState.shortBreakTime : pomodoroState.longBreakTime);
+                    const remaining = target - (pomodoroState.elapsed + (serverNow() - pomodoroState.startTime));
+                    if (!(remaining > 2500))
+                        return;
+                    const work = pomodoroState.mode === 'work';
+                    await capP.LocalNotifications.schedule({ notifications: [{ id: CAP_POMO_ID, title: work ? 'Pomodoro Complete! 🍅' : 'Break Over! ⚡', body: work ? 'Time for a well-deserved break.' : 'Ready to jump back into focus mode?', schedule: { at: new Date(Date.now() + remaining), allowWhileIdle: true }, channelId: 'pomo-alarms', extra: { kind: 'pomo' } }] });
+                } catch (e) {}
+            }
+
+            function capCancelTimerAlarm(timerId) {
+                if (!capIsNative())
+                    return;
+                capCancelIds([capIdFor('timer', timerId)]);
+            }
+
+            function capCancelPomoAlarm() {
+                capCancelIds([CAP_POMO_ID]);
+            }
+
+            function capCancelSlotAlarm(slot) {
+                if (!capIsNative() || !slot)
+                    return;
+                capCancelIds([capSchedId(slot.id, capYmd(new Date()))]);
+            }
+
+            function capCancelDdayKey(key) {
+                if (!capIsNative())
+                    return;
+                capCancelIds([capIdFor('dday', key)]);
+            }
+
+            function capNativeVibrate() {
+                if (!capIsNative())
+                    return;
+                try {
+                    const capP = capPlugins();
+                    if (capP.Haptics && capP.Haptics.vibrate)
+                        capP.Haptics.vibrate();
+                } catch (e) {}
+            }
+
+            function capShowImmediate(title, body, channelId) {
+                if (!capIsNative() || !capNotifGranted)
+                    return;
+                try {
+                    const capP = capPlugins();
+                    if (!capP.LocalNotifications)
+                        return;
+                    capEnsureChannels();
+                    capP.LocalNotifications.schedule({ notifications: [{ id: 600000 + (Date.now() % 99999), title: title || 'PomoHarbor', body: body || '', schedule: { at: new Date(Date.now() + 400) }, channelId: channelId || 'pomo-reminders' }] }).catch(() => {});
+                } catch (e) {}
+            }
+
+            // Debounced entry points called from existing app code.
+            let capSchedT = null;
+            function capScheduleChanged() {
+                if (!capIsNative())
+                    return;
+                clearTimeout(capSchedT);
+                capSchedT = setTimeout(() => { capReconcileSchedule(); }, 1500);
+            }
+
+            function capTimerStateChanged() {
+                if (!capIsNative())
+                    return;
+                capReconcileTimers();
+            }
+
+            function capPomoStateChanged() {
+                if (!capIsNative())
+                    return;
+                capReconcilePomo();
+            }
+
+            function capReconcileAllSoon() {
+                if (!capIsNative())
+                    return;
+                capReconcileSchedule();
+                capReconcileTimers();
+                capReconcilePomo();
+            }
+
+            function initNativeApp() {
+                if (!capIsNative())
+                    return;
+                try {
+                    const capP = capPlugins();
+                    if (capP.StatusBar) {
+                        if (capP.StatusBar.setStyle)
+                            capP.StatusBar.setStyle({ style: 'DARK' }).catch(() => {});
+                        if (capP.StatusBar.setBackgroundColor)
+                            capP.StatusBar.setBackgroundColor({ color: '#0F0E17' }).catch(() => {});
+                        if (capP.StatusBar.setOverlaysWebView)
+                            capP.StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {});
+                    }
+                    // Android back button: back out of todo.html, close the
+                    // topmost modal/panel, else send the app to background.
+                    if (capP.App && capP.App.addListener) {
+                        capP.App.addListener('backButton', () => {
+                            try {
+                                if (window.location.pathname.indexOf('todo.html') > -1) {
+                                    window.history.back();
+                                    return;
+                                }
+                                const mods = Array.from(document.querySelectorAll('[id$="-modal"]')).filter(el => el.classList && !el.classList.contains('opacity-0') && !el.classList.contains('pointer-events-none'));
+                                if (mods.length) {
+                                    closeModal(mods[mods.length - 1].id);
+                                    return;
+                                }
+                                const np = document.getElementById('notifications-panel');
+                                if (np && np.classList.contains('open')) {
+                                    closeNotificationsPanel();
+                                    return;
+                                }
+                                capP.App.minimizeApp();
+                            } catch (e) {
+                                try { capP.App.minimizeApp(); } catch (e2) {}
+                            }
+                        }).catch(() => {});
+                        // Refresh alarms whenever the app is backgrounded or
+                        // resumed so closed-app alerts match the latest state.
+                        capP.App.addListener('pause', () => { capReconcileAllSoon(); }).catch(() => {});
+                        capP.App.addListener('resume', () => { capRefreshNotifState().then(() => { capReconcileAllSoon(); }); }).catch(() => {});
+                    }
+                    // External links open in the system browser, never trap the app.
+                    if (capP.Browser && capP.Browser.open) {
+                        document.addEventListener('click', (ev) => {
+                            try {
+                                const a = ev.target && ev.target.closest ? ev.target.closest('a[target="_blank"]') : null;
+                                if (a && a.href && /^https?:/.test(a.href)) {
+                                    ev.preventDefault();
+                                    capP.Browser.open({ url: a.href });
+                                }
+                            } catch (e) {}
+                        }, true);
+                    }
+                    // Tapping a notification just opens the app (content is
+                    // already in-app); re-sync alarms in case time passed.
+                    if (capP.LocalNotifications && capP.LocalNotifications.addListener) {
+                        capP.LocalNotifications.addListener('localNotificationActionPerformed', () => { capReconcileAllSoon(); }).catch(() => {});
+                    }
+                    // Boot: if notifications were granted before, arm everything.
+                    setTimeout(() => {
+                        capRefreshNotifState().then(granted => {
+                            if (granted)
+                                capReconcileAllSoon();
+                        });
+                    }, 4000);
+                } catch (e) {}
             }
 
             // --- Friends ---
@@ -10959,6 +11415,10 @@
                 if (!("Notification"in window) || Notification.permission !== 'granted')
                     return;
                 try {
+                    if (capIsNative()) {
+                        capShowImmediate(n.title || 'PomoHarbor', n.body || '', 'pomo-reminders');
+                        return;
+                    }
                     new Notification(n.title || 'PomoHarbor',{
                         body: n.body || '',
                         tag: n.id
@@ -11261,6 +11721,7 @@
                 console.warn('startup reminder checks failed', e);
             }
             queueVitLiveSync();
+            initNativeApp();
             render();
             updateMobileNavActiveState(currentTab);
             renderMobileTimersSegment();
@@ -11270,7 +11731,7 @@
             );
 
             // Register the PWA service worker.
-            if ('serviceWorker'in navigator) {
+            if ('serviceWorker'in navigator && !capIsNative()) {
                 navigator.serviceWorker.register('/sw.js').then( (reg) => {
                     window.__pomoInstallDiagnostics.swOk = true;
                     console.log('[PWA] Service worker registered:', reg.scope);
