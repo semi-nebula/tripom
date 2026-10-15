@@ -2444,6 +2444,17 @@
                         <p class="text-xs text-muted-custom">No slots for this day. Tap + Slot to add one.</p>
                     </div>
                 </div>
+                <div id="attendance-card" class="custom-card rounded-3xl p-4 sm:p-6 border mt-4">
+                    <div class="flex items-center justify-between gap-2 mb-1">
+                        <h4 class="text-sm font-bold accent-text">📊 Attendance</h4>
+                        <label class="flex items-center gap-1.5 text-[11px] font-semibold text-muted-custom">Required
+                            <input id="attendance-required" type="number" min="0" max="100" value="75" onchange="setAttendanceRequired(this.value)" class="w-14 custom-nav border rounded-lg px-2 py-1 text-xs outline-none text-white text-center">%
+                        </label>
+                    </div>
+                    <p class="text-[10px] text-muted-custom mb-2">Mark ✓ / ✕ on today's classes. Bunk math updates live and syncs across devices.</p>
+                    <div id="attendance-summary" class="text-xs mb-1"></div>
+                    <div id="attendance-list" class="space-y-1.5"></div>
+                </div>
             </div>
             <!-- GROUPS SECTION -->
             <div id="groups-container" class="hidden max-w-3xl mx-auto">
@@ -5673,6 +5684,7 @@
                     // devices clear any running session they were showing.
                     studySession: JSON.parse(localStorage.getItem(roomKey('pomoharbor_study_session'))) || STUDY_SESSION_IDLE,
                     dDays: JSON.parse(localStorage.getItem(roomKey('pomoharbor_ddays'))) || [],
+                    attendance: JSON.parse(localStorage.getItem(roomKey('pomoharbor_attendance'))) || null,
                     theme: localStorage.getItem(roomKey('pomoharbor_fmhy_theme')) || 'catppuccin',
                     amoled: localStorage.getItem(roomKey('pomoharbor_amoled_mode')) === 'true',
                     translucent: localStorage.getItem(roomKey('pomoharbor_translucent_mode')) === 'true',
@@ -5807,6 +5819,11 @@
                         capScheduleChanged();
                         if (currentTab === 'schedule')
                             renderDDays();
+                    }
+                    if (remote.attendance && typeof remote.attendance === 'object') {
+                        localStorage.setItem(roomKey('pomoharbor_attendance'), JSON.stringify(remote.attendance));
+                        if (currentTab === 'schedule')
+                            renderSchedule();
                     }
                     if (remote.theme) {
                         document.documentElement.setAttribute('data-theme', remote.theme);
@@ -6696,18 +6713,21 @@
                         const notifyBadge = slot.notify ? '<span class="slot-badge">🔔</span>' : '';
                         const timerBadge = slot.timerId ? '<span class="slot-badge">⏱️</span>' : '';
                         const startBtn = slot.timerId ? `<button onclick="event.stopPropagation(); startScheduleTimer('${slot.id}')" class="ml-2 px-3 py-1.5 custom-btn text-xs rounded-lg font-bold">Start</button>` : '';
+                        const classBtn = slot.timerId ? '' : `<button onclick="event.stopPropagation(); startClassTimer('${slot.id}')" title="Start class timer" class="px-2.5 py-1.5 custom-btn text-xs rounded-lg font-bold">▶</button>`;
+                        const attBtns = (scheduleSelectedDay === nowDay) ? attButtonsFor(slot) : '';
                         return `
                         <div onclick="openScheduleSlotModal('${slot.id}')" class="panel-menu-item schedule-slot-row justify-between ${opacity} ${ring} ${cls} border cursor-pointer">
                             <div class="flex items-center gap-3 min-w-0">
                                 <div class="slot-time font-bold mono whitespace-nowrap">${formatTime12(startMin)} – ${formatTime12(endMin)}</div>
                                 <div class="slot-title font-semibold truncate">${escapeHtml(slot.title || 'Untitled')}</div>
                             </div>
-                            <div class="flex items-center gap-2 shrink-0">${notifyBadge}${timerBadge}${startBtn}</div>
+                            <div class="flex items-center gap-2 shrink-0">${notifyBadge}${timerBadge}${attBtns}${startBtn}${classBtn}</div>
                         </div>
                     `;
                     }
                     ).join('');
                 }
+                renderAttendance();
             }
 
             function selectScheduleDay(day) {
@@ -8762,6 +8782,187 @@
                         });
                     }, 4000);
                 } catch (e) {}
+            }
+
+            // --- Class tools: one-tap timers + attendance ----------------------
+            // One-tap class timer: any schedule slot becomes a running
+            // countdown named after the class (journaled on finish like any
+            // other timer, and alarmed natively via capTimerStateChanged).
+            function startClassTimer(slotId) {
+                const slot = scheduleState.slots.find(s => s.id === slotId);
+                if (!slot)
+                    return;
+                if (slot.timerId) {
+                    startScheduleTimer(slot.id);
+                    return;
+                }
+                const ds = new Date().toLocaleDateString('en-CA');
+                const cid = 'cls_' + slot.id + '_' + ds.replace(/-/g, '');
+                let timer = timers.find(t => t.id === cid);
+                if (timer && timer.running) {
+                    switchTab('timer');
+                    render();
+                    return;
+                }
+                const durationMs = (minutesFromTime(slot.end) - minutesFromTime(slot.start)) * 60000;
+                if (!(durationMs > 0)) {
+                    showToast('Slot has no valid duration');
+                    return;
+                }
+                if (!timer) {
+                    timer = { id: cid, title: slot.title || 'Class', category: 'Class', type: 'timer', durationMs: durationMs, elapsed: 0, running: false, startTime: 0, finished: false, laps: [], nudge8hShown: false, nudge12hShown: false, scheduleDay: slot.day, scheduleSlotId: slot.id };
+                    timers.push(timer);
+                } else {
+                    timer.finished = false;
+                    timer.elapsed = 0;
+                }
+                timer.running = true;
+                timer.startTime = serverNow();
+                save();
+                syncWorkerState();
+                capTimerStateChanged();
+                renderSchedule();
+                showToast('⏱️ Timer started for ' + (slot.title || 'class'));
+            }
+
+            // --- Attendance --------------------------------------------------
+            // Marked per calendar date (only today's rows show the buttons).
+            // Stored per room + synced via cloud like everything else:
+            // { dates: { 'YYYY-MM-DD': { slotId: 'P'|'A' } }, required: 75 }
+            function getAttendanceStore() {
+                try {
+                    const st = JSON.parse(localStorage.getItem(roomKey('pomoharbor_attendance'))) || {};
+                    if (!st.dates || typeof st.dates !== 'object')
+                        st.dates = {};
+                    if (!(st.required >= 0))
+                        st.required = 75;
+                    return st;
+                } catch (e) {
+                    return { dates: {}, required: 75 };
+                }
+            }
+
+            function saveAttendanceStore(st) {
+                try {
+                    localStorage.setItem(roomKey('pomoharbor_attendance'), JSON.stringify(st));
+                } catch (e) {}
+                pushStateToCloud();
+            }
+
+            function attendanceTodayStr() {
+                return new Date().toLocaleDateString('en-CA');
+            }
+
+            function getAttendanceMark(ds, slotId) {
+                const st = getAttendanceStore();
+                return (st.dates[ds] && st.dates[ds][slotId]) || '';
+            }
+
+            function markAttendance(slotId, mark) {
+                const ds = attendanceTodayStr();
+                const st = getAttendanceStore();
+                if (!st.dates[ds])
+                    st.dates[ds] = {};
+                st.dates[ds][slotId] = (st.dates[ds][slotId] === mark) ? '' : mark;
+                if (!st.dates[ds][slotId])
+                    delete st.dates[ds][slotId];
+                // Prune entries older than 180 days to bound growth.
+                const cutoff = new Date();
+                cutoff.setDate(cutoff.getDate() - 180);
+                const cutStr = cutoff.toLocaleDateString('en-CA');
+                Object.keys(st.dates).forEach(k => {
+                    if (k < cutStr)
+                        delete st.dates[k];
+                });
+                saveAttendanceStore(st);
+                renderSchedule();
+            }
+
+            function setAttendanceRequired(v) {
+                const st = getAttendanceStore();
+                v = Math.max(0, Math.min(100, Math.round(Number(v) || 0)));
+                st.required = v;
+                saveAttendanceStore(st);
+                renderAttendance();
+            }
+
+            // "Linear Algebra (Lab) · E102" -> "Linear Algebra" so theory +
+            // lab + tutorial of one course share one attendance record.
+            function attendanceBaseName(title) {
+                let b = String(title || 'Untitled').split('·')[0].trim();
+                b = b.replace(/\s*\((Lab|Tut|Tutorial|Theory)\)\s*$/i, '').trim();
+                return b || 'Untitled';
+            }
+
+            function attendanceStats() {
+                const st = getAttendanceStore();
+                const nameOf = {};
+                scheduleState.slots.forEach(s => {
+                    nameOf[s.id] = attendanceBaseName(s.title);
+                });
+                const per = {};
+                let TP = 0, TT = 0;
+                Object.keys(st.dates || {}).forEach(ds => {
+                    const day = st.dates[ds] || {};
+                    Object.keys(day).forEach(sid => {
+                        const m = day[sid];
+                        if (m !== 'P' && m !== 'A')
+                            return;
+                        const n = nameOf[sid] || 'Other';
+                        if (!per[n])
+                            per[n] = { p: 0, t: 0 };
+                        per[n].t++;
+                        TT++;
+                        if (m === 'P') {
+                            per[n].p++;
+                            TP++;
+                        }
+                    });
+                });
+                return { per, TP, TT, required: st.required || 75 };
+            }
+
+            function bunkText(p, t, req) {
+                if (!t)
+                    return 'no data yet';
+                const r = req / 100;
+                if (!(r > 0))
+                    return '—';
+                const safe = Math.floor(p / r - t);
+                if (safe >= 0)
+                    return `can bunk ${safe}`;
+                return `attend next ${-safe}`;
+            }
+
+            function attButtonsFor(slot) {
+                const mark = getAttendanceMark(attendanceTodayStr(), slot.id);
+                const pCls = mark === 'P' ? 'custom-btn' : 'custom-nav border text-muted-custom hover:text-white';
+                const aCls = mark === 'A' ? 'bg-red-500/80 text-white' : 'custom-nav border text-muted-custom hover:text-white';
+                return `<button onclick="event.stopPropagation(); markAttendance('${slot.id}', 'P')" title="Present" class="${pCls} w-7 h-7 rounded-lg text-[11px] font-bold">✓</button>` +
+                    `<button onclick="event.stopPropagation(); markAttendance('${slot.id}', 'A')" title="Absent" class="${aCls} w-7 h-7 rounded-lg text-[11px] font-bold">✕</button>`;
+            }
+
+            function renderAttendance() {
+                const card = document.getElementById('attendance-card');
+                const sumEl = document.getElementById('attendance-summary');
+                const listEl = document.getElementById('attendance-list');
+                const reqEl = document.getElementById('attendance-required');
+                if (!card || !sumEl || !listEl)
+                    return;
+                const { per, TP, TT, required } = attendanceStats();
+                if (reqEl && document.activeElement !== reqEl)
+                    reqEl.value = required;
+                const pct = TT ? Math.round(TP / TT * 100) : null;
+                const pctCls = pct === null ? 'text-muted-custom' : pct >= required ? 'text-emerald-400' : pct >= required - 10 ? 'text-amber-400' : 'text-red-400';
+                sumEl.innerHTML = TT ? `<span class="text-lg font-extrabold ${pctCls}">${pct}%</span><span class="text-muted-custom"> · ${TP}/${TT} classes · ${escapeHtml(bunkText(TP, TT, required))} (overall)</span>` : '<span class="text-muted-custom">No marks yet — tap ✓ / ✕ on today\'s classes above.</span>';
+                const names = Object.keys(per).sort((a, b) => (per[a].p / per[a].t) - (per[b].p / per[b].t));
+                listEl.innerHTML = names.map(n => {
+                    const { p, t } = per[n];
+                    const q = Math.round(p / t * 100);
+                    const c = q >= required ? 'text-emerald-400' : q >= required - 10 ? 'text-amber-400' : 'text-red-400';
+                    const bar = q >= required ? 'bg-emerald-400/70' : q >= required - 10 ? 'bg-amber-400/70' : 'bg-red-400/70';
+                    return `<div class="flex items-center gap-2 text-[11px]"><span class="font-semibold truncate flex-1">${escapeHtml(n)}</span><span class="text-muted-custom whitespace-nowrap">${p}/${t}</span><div class="w-16 h-1.5 rounded-full bg-white/10 overflow-hidden shrink-0"><div class="h-full ${bar} rounded-full" style="width:${q}%"></div></div><span class="font-bold ${c} w-9 text-right shrink-0">${q}%</span><span class="text-muted-custom truncate hidden sm:inline">${escapeHtml(bunkText(p, t, required))}</span></div>`;
+                }).join('');
             }
 
             // --- Friends ---
