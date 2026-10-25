@@ -1,6 +1,6 @@
 {
   "name": "pomoharbor",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "PomoHarbor - Real-Time Multi-Timer, Pomodoro & Flowtunes Workspace (PWA + Android via Capacitor)",
   "scripts": {
     "copy-web": "node scripts/copy-web.js",

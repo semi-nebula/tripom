@@ -1,0 +1,15 @@
+day,start,end,title,color,remind,timer
+Mon,07:00,07:30,Wake up + stretch,amber,yes,no
+Mon,09:00,16:00,College,indigo,yes,no
+Mon,18:00,19:00,Gym,emerald,yes,no
+Mon,20:00,22:00,Maths study,amber,no,yes
+Tue,07:00,07:30,Wake up + stretch,amber,yes,no
+Tue,09:00,16:00,College,indigo,yes,no
+Tue,20:00,21:00,"Revision: maths, physics",violet,no,yes
+Wed,09:00,16:00,College,indigo,yes,no
+Wed,18:00,19:00,Gym,emerald,yes,no
+Thu,09:00,16:00,College,indigo,yes,no
+Fri,09:00,16:00,College,indigo,yes,no
+Fri,18:00,19:00,Gym,emerald,yes,no
+Sat,10:00,12:00,Weekly revision,sky,no,yes
+Sun,11:00,12:00,Plan the week,slate,yes,no

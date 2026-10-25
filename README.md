@@ -1,8 +1,33 @@
 # PomoHarbor (tripom)
 
 PomoHarbor — real-time multi-timer, Pomodoro, schedule (with VIT timetable
-import), study tracking, journal, todos, chat, groups. Live site:
-https://pomoharbor.vercel.app
+import and AI CSV import/export), study tracking, journal, todos, chat,
+groups. Live site: https://pomoharbor.vercel.app
+
+## Schedule from an AI chat (CSV)
+
+In the Schedule tab, tap **🤖 AI CSV**. Copy the ready-made prompt into
+Gemini / ChatGPT / any AI chat, describe your plan in plain words, then
+import the `schedule.csv` it replies with (upload the file, or just paste
+the text — a whole chat reply works). Each row becomes a normal slot you
+can tap to edit or delete. To change your schedule later, use *Copy
+prompt + my schedule*: your current timetable goes to the AI as CSV, you
+describe the changes, and the updated CSV re-imports in "Replace my
+previous CSV import" mode. Your schedule can also be exported as CSV.
+
+Canonical format (see `schedule.example.csv`):
+
+```csv
+day,start,end,title,color,remind,timer
+Mon,09:00,16:00,College,indigo,yes,no
+```
+
+`day` is `Mon`–`Sun` (one row per day), times are 24-hour `HH:MM`,
+`color` is one of `indigo emerald amber rose sky violet slate`, and
+`remind`/`timer` are `yes`/`no` (timer = also create a countdown timer).
+The importer is deliberately forgiving about real AI output: full day
+names, `Mon-Fri`, 12-hour times, a single `09:00-10:00` column, durations,
+`;`/tab delimiters, markdown tables, and header aliases all parse.
 
 The app is a single-file PWA (`index.html` + `todo.html`) with Firebase cloud
 sync. The same file also powers the Android app via Capacitor.
