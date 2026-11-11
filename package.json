@@ -3,6 +3,7 @@
   "version": "1.7.0",
   "description": "PomoHarbor - Real-Time Multi-Timer, Pomodoro & Flowtunes Workspace (PWA + Android via Capacitor)",
   "scripts": {
+    "test": "node --test",
     "copy-web": "node scripts/copy-web.js",
     "cap:sync": "npm run copy-web && npx cap sync android",
     "android:debug": "npm run cap:sync && cd android && ./gradlew assembleDebug",

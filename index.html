@@ -2565,7 +2565,7 @@
                         <span>About<span class="hidden sm:inline"> Flowtunes</span></span>
                     </button>
                     <div class="flex items-center gap-1.5 shrink-0">
-                        <button id="flowtunes-fullscreen-button" type="button" onclick="enterFlowtunesFullscreen()" title="Expand Flowtunes" aria-label="Expand Flowtunes player to fullscreen" class="glass-panel px-2.5 py-1.5 rounded-xl border text-[11px] font-bold accent-text flex items-center gap-1.5 hover:border-white/30 transition shadow cursor-pointer">
+                        <button id="flowtunes-fullscreen-button" type="button" onclick="enterFlowtunesFullscreen()" title="Expand Flowtunes" aria-label="Expand Flowtunes player to fullscreen" aria-pressed="false" class="glass-panel px-2.5 py-1.5 rounded-xl border text-[11px] font-bold accent-text flex items-center gap-1.5 hover:border-white/30 transition shadow cursor-pointer">
                             <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></svg>
                             <span class="hidden sm:inline">Fullscreen</span>
                         </button>
@@ -2578,10 +2578,11 @@
                 <div id="flowtunes-frame-wrapper" class="flowtunes-frame-wrapper custom-card rounded-3xl overflow-hidden border shadow-2xl flex-1 min-h-0 w-full relative">
                     <div class="flowtunes-fullscreen-bar">
                         <span class="text-xs font-bold accent-text">🎵 Flowtunes</span>
-                        <button id="flowtunes-fullscreen-exit" type="button" onclick="exitFlowtunesFullscreen()" class="glass-panel px-3 py-1.5 rounded-xl text-xs font-bold accent-text hover:border-white/30 transition">Exit fullscreen <span aria-hidden="true">✕</span></button>
+                        <button id="flowtunes-fullscreen-exit" type="button" onclick="exitFlowtunesFullscreen()" title="Exit fullscreen (Esc)" aria-keyshortcuts="Escape" class="glass-panel px-3 py-1.5 rounded-xl text-xs font-bold accent-text hover:border-white/30 transition">Exit fullscreen <span aria-hidden="true">✕</span></button>
                     </div>
-                    <!-- Leave scrolling enabled so controls remain reachable in short viewports. -->
-                    <iframe id="flowtunes-frame" src="https://www.flowtunes.app" class="absolute inset-0 w-full h-full border-0" allow="autoplay; encrypted-media; fullscreen; picture-in-picture; web-share" allowfullscreen loading="eager" title="Flowtunes music player"></iframe>
+                    <!-- Keep fullscreen owned by the wrapper: a nested fullscreen iframe
+                         would cover our exit control. Leave scrolling enabled for short viewports. -->
+                    <iframe id="flowtunes-frame" src="https://www.flowtunes.app" class="absolute inset-0 w-full h-full border-0" allow="autoplay; encrypted-media; fullscreen 'none'; picture-in-picture; web-share" loading="eager" title="Flowtunes music player"></iframe>
                 </div>
             </div>
             <!-- SCHEDULE SECTION -->
@@ -5518,10 +5519,43 @@
                 document.getElementById(id).classList.add('opacity-0', 'pointer-events-none');
             }
 
+            let flowtunesFullscreenActive = false;
+            let flowtunesFullscreenExiting = false;
+
+            function getFlowtunesFullscreenElement() {
+                return document.fullscreenElement || document.webkitFullscreenElement || null;
+            }
+
+            function isFlowtunesFullscreen() {
+                const player = document.getElementById('flowtunes-frame-wrapper');
+                const fullscreenElement = getFlowtunesFullscreenElement();
+                return !!(player && fullscreenElement && (fullscreenElement === player || player.contains(fullscreenElement)));
+            }
+
+            function syncFlowtunesFullscreen() {
+                const wasActive = flowtunesFullscreenActive;
+                flowtunesFullscreenActive = isFlowtunesFullscreen();
+                const expandButton = document.getElementById('flowtunes-fullscreen-button');
+                if (expandButton)
+                    expandButton.setAttribute('aria-pressed', String(flowtunesFullscreenActive));
+
+                // Browser Escape/back gestures can exit without calling our button.
+                // Use the actual fullscreen state, not just the request's promise.
+                if (flowtunesFullscreenActive && !wasActive) {
+                    document.getElementById('flowtunes-fullscreen-exit')?.focus({preventScroll: true});
+                } else if (!flowtunesFullscreenActive && wasActive && document.body.classList.contains('flowtunes-active')) {
+                    expandButton?.focus({preventScroll: true});
+                }
+            }
+
             function enterFlowtunesFullscreen() {
                 const player = document.getElementById('flowtunes-frame-wrapper');
                 if (!player)
                     return;
+                if (isFlowtunesFullscreen()) {
+                    exitFlowtunesFullscreen();
+                    return;
+                }
 
                 const requestFullscreen = player.requestFullscreen || player.webkitRequestFullscreen;
                 if (typeof requestFullscreen !== 'function') {
@@ -5539,22 +5573,47 @@
                 }
             }
 
-            function exitFlowtunesFullscreen() {
-                const exitFullscreen = document.exitFullscreen || document.webkitExitFullscreen;
-                if (typeof exitFullscreen !== 'function')
+            async function exitFlowtunesFullscreen() {
+                if (flowtunesFullscreenExiting || !isFlowtunesFullscreen())
                     return;
-
-                try {
-                    const request = exitFullscreen.call(document);
-                    const restoreFocus = () => document.getElementById('flowtunes-fullscreen-button').focus({preventScroll: true});
-                    if (request && typeof request.then === 'function')
-                        request.then(restoreFocus).catch(() => showToast('Use your browser controls to exit fullscreen.'));
-                    else
-                        restoreFocus();
-                } catch (e) {
+                const exitFullscreen = (document.fullscreenElement && document.exitFullscreen) || document.webkitExitFullscreen || document.exitFullscreen;
+                if (typeof exitFullscreen !== 'function') {
                     showToast('Use your browser controls to exit fullscreen.');
+                    return;
+                }
+
+                flowtunesFullscreenExiting = true;
+                try {
+                    // An exit call can pop only the top fullscreen layer. Unwind
+                    // any player-owned layers, but leave unrelated fullscreen alone.
+                    for (let attempts = 0; attempts < 4 && isFlowtunesFullscreen(); attempts++) {
+                        const previousElement = getFlowtunesFullscreenElement();
+                        const request = exitFullscreen.call(document);
+                        if (!request || typeof request.then !== 'function')
+                            break; // Legacy WebKit completes via webkitfullscreenchange.
+                        await request;
+                        if (getFlowtunesFullscreenElement() === previousElement)
+                            break;
+                    }
+                } catch (e) {
+                    // The browser may already have handled Escape itself.
+                    if (isFlowtunesFullscreen())
+                        showToast('Use your browser controls to exit fullscreen.');
+                } finally {
+                    flowtunesFullscreenExiting = false;
+                    syncFlowtunesFullscreen();
                 }
             }
+
+            document.addEventListener('fullscreenchange', syncFlowtunesFullscreen);
+            document.addEventListener('webkitfullscreenchange', syncFlowtunesFullscreen);
+            document.addEventListener('keydown', function(event) {
+                if ((event.key === 'Escape' || event.key === 'Esc') && isFlowtunesFullscreen()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    exitFlowtunesFullscreen();
+                }
+            }, true);
 
             function render() {
                 renderMobileTimersSegment();
